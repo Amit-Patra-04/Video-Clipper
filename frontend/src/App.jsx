@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Header from './components/Common/Header';
 import NotificationToast from './components/Common/NotificationToast';
-import UploadModal from './components/Ingestion/UploadModal';
-import YoutubeInput from './components/Ingestion/YoutubeInput';
+import IngestionFlow from './components/Ingestion/IngestionFlow';
 import PipelineStatus from './components/Pipeline/PipelineStatus';
 import VideoPlayer from './components/Editor/VideoPlayer';
 import Timeline from './components/Editor/Timeline';
@@ -24,8 +23,6 @@ export default function App() {
   const [videoId, setVideoId] = useState(null);
   const [videoTitle, setVideoTitle] = useState('My Video Project');
   const [videoSrc, setVideoSrc] = useState('');
-  const [isUploading, setIsUploading] = useState(false);
-  const [isYoutubeLoading, setIsYoutubeLoading] = useState(false);
 
   // Pipeline state
   const [pipelineProgress, setPipelineProgress] = useState({
@@ -127,59 +124,17 @@ export default function App() {
     };
   }, [stage, videoId]);
 
-  // Upload handler
-  const handleUpload = async file => {
-    setIsUploading(true);
-    try {
-      const res = await apiClient.uploadVideo(file);
-      setVideoId(res.video_id);
-      setVideoTitle(res.title);
-      setTotalDuration(res.duration || 60);
-      setTrimStart(0);
-      setTrimEnd(Math.min(res.duration || 60, 30));
-      // Stream directly from storage
-      setVideoSrc(`/storage/uploads/${res.filename}`);
-
-      setStage('pipeline');
-      setNotification({
-        type: 'success',
-        message: 'Video uploaded. AI Pipeline started!'
-      });
-    } catch (err) {
-      setNotification({
-        type: 'error',
-        message: err.message || 'Upload failed'
-      });
-    } finally {
-      setIsUploading(false);
+  const handleUploadSuccess = jobData => {
+    setVideoId(jobData.video_id);
+    setVideoTitle(jobData.filename || 'Uploaded Video');
+    if (jobData.file_path) {
+      setVideoSrc(`/storage/uploads/${jobData.video_id}_${jobData.filename}`);
     }
-  };
-
-  // YouTube Ingest handler
-  const handleYoutube = async url => {
-    setIsYoutubeLoading(true);
-    try {
-      const res = await apiClient.ingestYoutube(url);
-      setVideoId(res.video_id);
-      setVideoTitle(res.title);
-      setTotalDuration(res.duration || 60);
-      setTrimStart(0);
-      setTrimEnd(Math.min(res.duration || 60, 30));
-      setVideoSrc(`/storage/uploads/${res.filename}`);
-
-      setStage('pipeline');
-      setNotification({
-        type: 'success',
-        message: 'YouTube video imported. Analyzing viral moments...'
-      });
-    } catch (err) {
-      setNotification({
-        type: 'error',
-        message: err.message || 'YouTube import failed'
-      });
-    } finally {
-      setIsYoutubeLoading(false);
-    }
+    setNotification({
+      type: 'success',
+      message: `Upload successful, job queued! Job ID: ${jobData.job_id}`
+    });
+    setStage('pipeline');
   };
 
   // Quick Demo Loader
@@ -349,14 +304,8 @@ export default function App() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <UploadModal
-                onUpload={handleUpload}
-                onDemoLoad={handleDemoLoad}
-                isUploading={isUploading}
-              />
-              <YoutubeInput onSubmit={handleYoutube} isLoading={isYoutubeLoading} />
-            </div>
+            {/* Unified Ingestion Flow: (a) Video Upload & (b) YouTube URL */}
+            <IngestionFlow onSuccess={handleUploadSuccess} onDemoLoad={handleDemoLoad} />
           </div>
         )}
 

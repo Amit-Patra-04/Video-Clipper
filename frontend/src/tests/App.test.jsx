@@ -3,13 +3,23 @@ import { describe, it, expect } from 'vitest';
 import App from '../App';
 
 describe('App component', () => {
-  it('renders landing page with upload modal and youtube input', () => {
+  it('renders landing page with IngestionFlow tabs', () => {
     render(<App />);
 
     expect(screen.getByText(/AutoClip AI/i)).toBeInTheDocument();
-    expect(screen.getByText(/Direct Video Upload/i)).toBeInTheDocument();
-    expect(screen.getByText(/Authorized YouTube Import/i)).toBeInTheDocument();
+    expect(screen.getByText(/\(a\) Video File Upload/i)).toBeInTheDocument();
+    expect(screen.getByText(/\(b\) YouTube URL Input/i)).toBeInTheDocument();
     expect(screen.getByText(/Try Sample Video/i)).toBeInTheDocument();
+  });
+
+  it('switches to YouTube URL tab and displays policy warning notice', () => {
+    render(<App />);
+
+    const ytTabBtn = screen.getByText(/\(b\) YouTube URL Input/i);
+    fireEvent.click(ytTabBtn);
+
+    expect(screen.getByText(/YouTube API & Policy Guardrail Notice/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/https:\/\/www\.youtube\.com/i)).toBeInTheDocument();
   });
 
   it('loads sample video studio when clicking Try Sample Video', async () => {

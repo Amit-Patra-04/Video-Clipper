@@ -29,6 +29,10 @@ backend/.pytest_cache/
 htmlcov/
 
 # Local media storage (keep directory structure)
+*.db
+*.sqlite
+*.sqlite3
+backend/storage/*.db
 backend/storage/uploads/*
 !backend/storage/uploads/.gitkeep
 backend/storage/audio/*

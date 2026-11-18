@@ -7,34 +7,55 @@ export const apiClient = {
     return res.json();
   },
 
-  async uploadVideo(file) {
+  /**
+   * Unified Ingestion Endpoint: POST /api/upload (or /upload)
+   * Handles (a) Video file upload or (b) YouTube URL input
+   */
+  async uploadToEndpoint(file = null, youtubeUrl = null) {
     const formData = new FormData();
-    formData.append('file', file);
+    if (file) {
+      formData.append('file', file);
+    }
+    if (youtubeUrl) {
+      formData.append('youtube_url', youtubeUrl);
+    }
 
-    const res = await fetch(`${API_BASE}/ingest/upload`, {
+    const res = await fetch(`${API_BASE}/upload`, {
       method: 'POST',
       body: formData
     });
 
+    const data = await res.json().catch(() => ({}));
+
     if (!res.ok) {
-      const err = await res.json().catch(() => ({ detail: 'Upload failed' }));
-      throw new Error(err.detail || 'Upload failed');
+      const errorObj = new Error(data.detail || 'Upload failed');
+      errorObj.status = res.status;
+      errorObj.detail = data.detail;
+      errorObj.isPolicyWarning = res.status === 403;
+      throw errorObj;
     }
+
+    return data;
+  },
+
+  async getJobStatus(jobId) {
+    const res = await fetch(`${API_BASE}/jobs/${jobId}`);
+    if (!res.ok) throw new Error('Failed to retrieve job status');
     return res.json();
   },
 
-  async ingestYoutube(url) {
-    const res = await fetch(`${API_BASE}/ingest/youtube`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url })
-    });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ detail: 'YouTube import failed' }));
-      throw new Error(err.detail || 'YouTube import failed');
-    }
+  async listRecentJobs() {
+    const res = await fetch(`${API_BASE}/jobs`);
+    if (!res.ok) throw new Error('Failed to retrieve jobs');
     return res.json();
+  },
+
+  async uploadVideo(file) {
+    return this.uploadToEndpoint(file, null);
+  },
+
+  async ingestYoutube(url) {
+    return this.uploadToEndpoint(null, url);
   },
 
   async getPipelineStatus(videoId) {
