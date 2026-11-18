@@ -44,6 +44,12 @@ export const apiClient = {
     return res.json();
   },
 
+  async getJobSegments(jobId) {
+    const res = await fetch(`${API_BASE}/jobs/${jobId}/segments`);
+    if (!res.ok) throw new Error('Failed to fetch job segments');
+    return res.json();
+  },
+
   async listRecentJobs() {
     const res = await fetch(`${API_BASE}/jobs`);
     if (!res.ok) throw new Error('Failed to retrieve jobs');

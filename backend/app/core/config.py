@@ -38,6 +38,16 @@ class Settings(BaseSettings):
     HTTP_TIMEOUT_SECONDS: float = 120.0
     MAX_WORKER_RETRIES: int = 3
     RETRY_BACKOFF_SECONDS: float = 2.0
+
+    # Highlight Ranking Configuration
+    MIN_HIGHLIGHT_SEGMENTS: int = 5
+    HIGHLIGHT_KEYWORDS: list = [
+        "secret", "never", "insane", "truth", "revealed", "stop", "mistake",
+        "warning", "why", "nobody", "crazy", "fail", "shocking", "proof",
+        "rule", "hacks", "money", "viral", "revenue", "growth", "key",
+        "strategy", "lesson", "how to", "best", "worst", "game changer",
+        "applause", "laughter", "breakthrough", "problem", "solution"
+    ]
     
     # FFmpeg executable resolution
     FFMPEG_PATH: str = ""

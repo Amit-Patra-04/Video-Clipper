@@ -32,25 +32,38 @@ ffmpeg -y -i input.mp4 -vn -acodec pcm_s16le -ar 16000 -ac 1 output.wav
 
 ---
 
-## 3. Multimodal Highlight Virality Scoring Formula
+## 3. Multimodal Highlight Virality Scoring Formula & Non-Overlapping Heuristics
 
 ### Decision
-The composite Virality Score ($V \in [0, 100]$) is computed using four weighted pillars:
+The composite Virality Score ($Score \in [50, 99]$) is computed using four multi-modal cue pillars:
 
-$$V = 0.35 \times S_{\text{hook}} + 0.25 \times S_{\text{audio}} + 0.20 \times S_{\text{visual}} + 0.20 \times S_{\text{topic}}$$
+$$Score = 0.30 \times S_{\text{audio}} + 0.25 \times S_{\text{rate}} + 0.20 \times S_{\text{novelty}} + 0.25 \times S_{\text{textual}}$$
 
-### Breakdown & Weightings:
-1. **$S_{\text{hook}}$ (Opening 3-5 Second Hook Strength — 35%)**:
-   - Retention on YouTube Shorts and TikTok is heavily determined in the first 3 seconds.
-   - Evaluates curiosity gaps, contrarian statements, emotional trigger words (e.g., *"secret", "never", "mistake", "warning", "insane"*), and question syntax.
-2. **$S_{\text{audio}}$ (Audio Energy & Vocal Dynamics — 25%)**:
-   - Computes standard deviation and peak-to-average ratio of short-time RMS energy.
-   - High dynamic range indicates expressive vocal modulation and passion, whereas flat volume indicates monotone delivery that leads to viewer drop-off.
-3. **$S_{\text{visual}}$ (Visual Pacing & Scene Cuts — 20%)**:
-   - Evaluates cuts per minute (CPM).
-   - The optimal pacing for mobile shorts is 1 cut every 2.5 to 5.0 seconds (12–24 CPM).
-4. **$S_{\text{topic}}$ (Topic Arc & Punchline Coherence — 20%)**:
-   - Ensures the clip starts cleanly at a sentence boundary and resolves with a punchy insight rather than trailing off mid-thought.
+### Cue Breakdown & Heuristics:
+1. **$S_{\text{audio}}$ (Audio Amplitude & Word Volume — 30%)**:
+   - Calculates RMS energy and peak amplitude from 16kHz mono audio slice.
+   - Measures short-time RMS dynamic ratio ($\frac{\sigma_{\text{rms}}}{\mu_{\text{rms}}}$) over 100ms chunks.
+   - Audio spikes (cheering, loud applause, vocal excitement surges) boost this score and attach explainable reasons: `High audio amplitude peak (vocal surge / excitement)` or `Loud applause opening`.
+2. **$S_{\text{rate}}$ (Speaking Rate & Speech Pacing — 25%)**:
+   - Computes words spoken per second: $\text{WPS} = \frac{\text{Word Count}}{\text{Duration}}$.
+   - Optimal engagement on vertical short-form platforms is fast, energetic delivery ($2.8 \le \text{WPS} \le 4.2$).
+   - Scores 95.0 for energetic speech, 86.0 for fast pacing, and penalizes sluggish delivery (< 1.6 WPS).
+   - Generates reason: `Fast speaking rate (3.4 words/sec)`.
+3. **$S_{\text{novelty}}$ (Visual Novelty & Scene Transitions — 20%)**:
+   - Integrates scene cut points detected by PySceneDetect.
+   - Evaluates cuts per minute (CPM). Optimal cut pacing for short-form retention is 10 to 28 CPM (1 cut every 2.5 to 6s).
+   - Generates reason: `Visual novelty (N dynamic scene transitions)` or `Scene cut at topic transition`.
+4. **$S_{\text{textual}}$ (Textual & Semantic Analysis — 25%)**:
+   - **Configurable Keywords**: Scans segment text against `settings.HIGHLIGHT_KEYWORDS` (`"secret"`, `"never"`, `"revenue"`, `"mistake"`, `"growth"`, `"game changer"`, etc.).
+   - **Opening Hook Check**: Analyzes question hooks (`"?"`) and curiosity gap words in the first 5 seconds.
+   - **Optional LLM-based Analysis**: When `OPENAI_API_KEY` is present, prompts the LLM with the **actual transcript text** (guardrail: no hallucinations or blind links). If external keys are absent, relies on the deterministic keyword and syntax heuristic.
+   - Generates reason: `Trigger keywords detected ('secret', 'revenue')` or `High-curiosity question hook`.
+
+### Non-Overlapping & Ranking Guarantees:
+- **Strictly Non-Overlapping**: Applies greedy interval selection where no candidate is accepted if $\max(s_1, s_2) < \min(e_1, e_2)$.
+- **At Least 5 Segments**: Guarantees $\ge 5$ non-overlapping segments even on short videos by adaptively partitioning timeline gaps.
+- **Descending Order**: Segments are strictly ordered such that $Score_1 \ge Score_2 \ge Score_3 \ge \dots$
+- **Database Persistence**: Top segments are serialized into `JobModel.segments_json` in SQLite and exposed via `GET /api/jobs/{job_id}/segments`.
 
 ---
 

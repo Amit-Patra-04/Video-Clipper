@@ -5,9 +5,12 @@ from typing import Dict, Any, List, Optional
 from app.core.config import settings
 from app.core.logger import logger
 from app.core.db import (
+    SessionLocal,
+    JobModel,
     db_update_job,
     db_save_transcript,
-    db_save_scenes
+    db_save_scenes,
+    db_save_segments
 )
 from app.models.schemas import (
     PipelineProgress,
@@ -43,6 +46,17 @@ class VideoPipelineWorker:
         )
 
     def get_clips(self, video_id: str) -> List[HighlightClip]:
+        if video_id in self.clips_store and self.clips_store[video_id]:
+            return self.clips_store[video_id]
+        with SessionLocal() as db:
+            job = db.query(JobModel).filter(JobModel.video_id == video_id).order_by(JobModel.created_at.desc()).first()
+            if job and job.segments_json:
+                try:
+                    import json
+                    data = json.loads(job.segments_json)
+                    return [HighlightClip(**c) for c in data]
+                except Exception:
+                    pass
         return self.clips_store.get(video_id, [])
 
     def get_transcripts(self, video_id: str) -> List[SpeechSegment]:
@@ -216,9 +230,33 @@ class VideoPipelineWorker:
                     total_duration=meta.duration,
                     segments=segments,
                     scene_cuts=scene_cuts,
-                    wav_path=wav_path
+                    wav_path=wav_path,
+                    min_segments=settings.MIN_HIGHLIGHT_SEGMENTS
                 )
                 self.clips_store[video_id] = clips
+
+                # Format segments for DB persistence
+                segments_payload = [
+                    {
+                        "id": clip.id,
+                        "video_id": clip.video_id,
+                        "start": clip.start,
+                        "end": clip.end,
+                        "duration": clip.duration,
+                        "score": clip.virality_score,
+                        "virality_score": clip.virality_score,
+                        "title": clip.title,
+                        "reason": clip.reason,
+                        "reasons": clip.reasons,
+                        "cues": clip.cues,
+                        "transcript_snippet": clip.transcript_snippet,
+                        "suggested_aspect_ratio": clip.suggested_aspect_ratio
+                    }
+                    for clip in clips
+                ]
+
+                if job_id:
+                    db_save_segments(job_id, segments_payload)
 
                 # =================================================================
                 # Stage 6: Completion
@@ -227,7 +265,7 @@ class VideoPipelineWorker:
                 progress.progress = 100
                 progress.current_stage = "Completed"
                 progress.status = "completed"
-                progress.message = f"Analysis complete! {len(clips)} viral clips generated and ranked."
+                progress.message = f"Analysis complete! {len(clips)} non-overlapping highlights ranked."
 
                 if job_id:
                     db_update_job(
@@ -235,7 +273,7 @@ class VideoPipelineWorker:
                         status="completed",
                         current_stage="Completed",
                         progress=100,
-                        message=f"Pipeline complete! {len(clips)} highlights generated."
+                        message=f"Pipeline complete! {len(clips)} non-overlapping highlights ranked."
                     )
 
                 logger.info(f"[{video_id}] Pipeline completed successfully on attempt {attempt}!")

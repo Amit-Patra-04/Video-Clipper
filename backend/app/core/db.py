@@ -37,6 +37,7 @@ class JobModel(Base):
     policy_warning = Column(Text, nullable=True)
     transcript_json = Column(Text, nullable=True) # Serialized transcript with words, times, and speaker labels
     scenes_json = Column(Text, nullable=True) # Serialized scene cuts with timecodes
+    segments_json = Column(Text, nullable=True) # Serialized top ranked highlight segments with scores and reasons
     retry_count = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -56,6 +57,13 @@ class JobModel(Base):
             except Exception:
                 scenes_data = self.scenes_json
 
+        segments_data = None
+        if self.segments_json:
+            try:
+                segments_data = json.loads(self.segments_json)
+            except Exception:
+                segments_data = self.segments_json
+
         return {
             "job_id": self.id,
             "video_id": self.video_id,
@@ -72,6 +80,7 @@ class JobModel(Base):
             "policy_warning": self.policy_warning,
             "transcript": transcript_data,
             "scenes": scenes_data,
+            "segments": segments_data,
             "retry_count": self.retry_count,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
@@ -99,6 +108,7 @@ def init_db():
                 "current_stage": "VARCHAR(64) DEFAULT 'queued'",
                 "transcript_json": "TEXT",
                 "scenes_json": "TEXT",
+                "segments_json": "TEXT",
                 "retry_count": "INTEGER DEFAULT 0"
             }
             for col_name, col_type in columns_to_add.items():
@@ -211,6 +221,29 @@ def db_save_scenes(job_id: str, scenes_data: Any) -> Optional[JobModel]:
         db.commit()
         db.refresh(job)
         return job
+
+def db_save_segments(job_id: str, segments_data: Any) -> Optional[JobModel]:
+    """Save ranked highlight segments JSON into job record."""
+    with SessionLocal() as db:
+        job = db.query(JobModel).filter(JobModel.id == job_id).first()
+        if not job:
+            return None
+        job.segments_json = json.dumps(segments_data, default=str)
+        job.updated_at = datetime.utcnow()
+        db.commit()
+        db.refresh(job)
+        return job
+
+def db_get_segments(job_id: str) -> List[Dict[str, Any]]:
+    """Retrieve ranked highlight segments for a given job."""
+    with SessionLocal() as db:
+        job = db.query(JobModel).filter(JobModel.id == job_id).first()
+        if not job or not job.segments_json:
+            return []
+        try:
+            return json.loads(job.segments_json)
+        except Exception:
+            return []
 
 def db_list_recent_jobs(limit: int = 20) -> List[JobModel]:
     """List most recent jobs."""

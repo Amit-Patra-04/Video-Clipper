@@ -214,10 +214,11 @@ export default function App() {
         id: 'clip_demo_1',
         video_id: demoId,
         start: 4.5,
-        end: 34.2,
-        duration: 29.7,
+        end: 14.2,
+        duration: 9.7,
         title: '🔥 The 1 Secret Behind Viral Retention...',
         virality_score: 96,
+        score: 96,
         breakdown: {
           hook_score: 98.0,
           audio_energy_score: 94.0,
@@ -225,28 +226,94 @@ export default function App() {
           topic_coherence_score: 95.0
         },
         reason:
-          'Exceptional curiosity gap opening hook coupled with high acoustic energy burst in first 3 seconds.',
+          'Loud applause opening, high speaking rate (3.4 wps), and keyword trigger (\'secret\').',
+        reasons: ['Loud applause opening', 'Fast speaking rate (3.4 wps)', 'Trigger keyword (\'secret\')'],
         transcript_snippet:
-          'The secret reason why everyone fails at virality revealed. When you change your hook by 300 percent...',
+          'The secret reason why everyone fails at virality revealed.',
         suggested_aspect_ratio: '9:16'
       },
       {
         id: 'clip_demo_2',
         video_id: demoId,
         start: 15.0,
-        end: 34.2,
-        duration: 19.2,
+        end: 25.5,
+        duration: 10.5,
         title: '💡 How 300% Hook Spikes Retention',
-        virality_score: 89,
+        virality_score: 91,
+        score: 91,
         breakdown: {
-          hook_score: 87.0,
-          audio_energy_score: 90.0,
-          visual_pacing_score: 85.0,
+          hook_score: 89.0,
+          audio_energy_score: 91.0,
+          visual_pacing_score: 90.0,
           topic_coherence_score: 88.0
         },
         reason:
-          'Punchy data-backed metric hook with fast pacing ideal for short-form scroll-stopping feeds.',
-        transcript_snippet: 'When you change your hook by 300 percent, viewers stay hooked...',
+          'Scene cut transition and fast speech delivery (3.2 wps) on topic shift.',
+        reasons: ['Scene cut at topic transition', 'Fast speech delivery (3.2 wps)', 'High curiosity gap'],
+        transcript_snippet: 'When you change your hook by 300 percent, viewers stay hooked.',
+        suggested_aspect_ratio: '9:16'
+      },
+      {
+        id: 'clip_demo_3',
+        video_id: demoId,
+        start: 26.0,
+        end: 35.0,
+        duration: 9.0,
+        title: '⚡ Zero to Millions Growth Formula',
+        virality_score: 87,
+        score: 87,
+        breakdown: {
+          hook_score: 86.0,
+          audio_energy_score: 88.0,
+          visual_pacing_score: 84.0,
+          topic_coherence_score: 90.0
+        },
+        reason:
+          'High audio amplitude peak with punchline payoff (\'zero to millions\').',
+        reasons: ['High audio amplitude peak', 'Punchline payoff', 'Topic transition'],
+        transcript_snippet: 'This is the exact formula that took our channel from zero to millions.',
+        suggested_aspect_ratio: '9:16'
+      },
+      {
+        id: 'clip_demo_4',
+        video_id: demoId,
+        start: 36.0,
+        end: 46.5,
+        duration: 10.5,
+        title: '🎬 Audience Retention Pacing Breakdown',
+        virality_score: 82,
+        score: 82,
+        breakdown: {
+          hook_score: 80.0,
+          audio_energy_score: 83.0,
+          visual_pacing_score: 85.0,
+          topic_coherence_score: 81.0
+        },
+        reason:
+          'Visual novelty (2 scene transitions) with steady pacing.',
+        reasons: ['Visual novelty (2 scene cuts)', 'Steady speech tempo', 'Clear audio clarity'],
+        transcript_snippet: 'Visual cuts every 3 seconds keep mobile attention locked into the video.',
+        suggested_aspect_ratio: '9:16'
+      },
+      {
+        id: 'clip_demo_5',
+        video_id: demoId,
+        start: 48.0,
+        end: 58.0,
+        duration: 10.0,
+        title: '🎯 Actionable Takeaways & Next Steps',
+        virality_score: 78,
+        score: 78,
+        breakdown: {
+          hook_score: 77.0,
+          audio_energy_score: 79.0,
+          visual_pacing_score: 76.0,
+          topic_coherence_score: 80.0
+        },
+        reason:
+          'Topic transition and clear vocal volume summary.',
+        reasons: ['Topic transition', 'Clean sentence ending', 'Balanced audio volume'],
+        transcript_snippet: 'Apply these three rules to your next video upload for instant results.',
         suggested_aspect_ratio: '9:16'
       }
     ];

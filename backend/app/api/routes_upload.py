@@ -229,6 +229,23 @@ def get_job_scenes(job_id: str):
         "scenes": data["scenes"]
     }
 
+@router.get("/jobs/{job_id}/segments")
+def get_job_segments(job_id: str):
+    """Retrieve top N ranked non-overlapping highlight segments stored in DB."""
+    job = db_get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found.")
+    data = job.to_dict()
+    if not data.get("segments"):
+        raise HTTPException(status_code=404, detail=f"Highlights not yet ranked for job '{job_id}'. Current stage: {job.current_stage}")
+    return {
+        "job_id": job_id,
+        "video_id": job.video_id,
+        "stage": job.current_stage,
+        "segment_count": len(data["segments"]),
+        "segments": data["segments"]
+    }
+
 @router.get("/jobs")
 def list_jobs(limit: int = 20):
     """List recent ingestion jobs from SQLite DB."""

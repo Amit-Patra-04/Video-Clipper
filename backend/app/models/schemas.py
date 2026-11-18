@@ -34,9 +34,28 @@ class HighlightClip(BaseModel):
     duration: float
     title: str
     virality_score: int = Field(..., ge=0, le=100)
+    score: Optional[int] = None
     breakdown: HighlightScoreBreakdown
     reason: str
+    reasons: List[str] = []
+    cues: Dict[str, Any] = {}
     transcript_snippet: str
+    suggested_aspect_ratio: str = "9:16"
+
+class HighlightSegment(BaseModel):
+    id: str
+    video_id: str
+    start: float
+    end: float
+    duration: float
+    score: int = Field(..., ge=0, le=100)
+    virality_score: Optional[int] = None
+    title: str = ""
+    reason: str
+    reasons: List[str] = []
+    cues: Dict[str, Any] = {}
+    transcript_snippet: str = ""
+    breakdown: Optional[HighlightScoreBreakdown] = None
     suggested_aspect_ratio: str = "9:16"
 
 class VideoMetadata(BaseModel):
