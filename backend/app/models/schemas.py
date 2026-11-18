@@ -93,11 +93,13 @@ class MetadataGenerateRequest(BaseModel):
     video_id: str
     clip_id: Optional[str] = None
     custom_context: Optional[str] = None
+    tags_count: Optional[int] = 0
 
 class YouTubeTitleVariation(BaseModel):
     title: str
     hook_type: str # e.g. "Curiosity Gap", "Bold Claim", "Contrarian", "How-To"
     estimated_ctr: str # "Very High", "High"
+    character_count: Optional[int] = None
 
 class ChapterItem(BaseModel):
     timestamp: str
@@ -106,11 +108,18 @@ class ChapterItem(BaseModel):
 class MetadataGenerateResponse(BaseModel):
     video_id: str
     clip_id: Optional[str] = None
+    primary_title: str = ""
+    character_count: int = 0
     titles: List[YouTubeTitleVariation]
     description: str
+    sentence_count: int = 0
     tags: List[str]
     hashtags: List[str]
+    hashtag_count: int = 0
     chapters: List[ChapterItem]
+    official_guidance: Dict[str, str] = {}
+    over_tagging_warning: Optional[str] = None
+    is_user_edited: bool = False
 
 class ExportRequest(BaseModel):
     video_id: str

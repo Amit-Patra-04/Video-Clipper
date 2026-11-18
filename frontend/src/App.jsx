@@ -532,6 +532,7 @@ export default function App() {
                       metadata={metadataSuite}
                       onRegenerate={() => loadMetadata(videoId, selectedClip?.id)}
                       isLoading={isMetadataLoading}
+                      onSaveMetadata={updated => setMetadataSuite(updated)}
                     />
                   )}
 
