@@ -118,16 +118,28 @@ Implement spectral centroid and pause clustering to assign speaker identities (`
 
 ---
 
-## 8. Clip Editor UI, Multi-Track Canvas & FFmpeg Export Pipeline
+## 9. AI YouTube Shorts Metadata Generation & Official Policy Compliance
 
 ### Decision
-1. **Multi-Track Timeline with HTML5 Canvas**: Visual tracks for Video (scenes & thumbnails), Audio (interactive `<canvas>` waveform peaks), and Speech (color-coded speaker blocks), paired with dynamic trim handles and red playhead scrubber.
-2. **Crop & Aspect Ratio Reframing**: Live aspect ratio selector (9:16 vertical shorts, 1:1 square, 16:9 landscape, and original resolution). Crop and trim controls immediately update the HTML5 video preview.
-3. **Scene Transitions (Cut & Fade)**: Supports instant Jump Cuts (`cut`) and smooth Cross-Dissolves (`fade`), implemented with FFmpeg's `fade=t=in...` and `afade=t=in...` filters.
-4. **Quality & Audio Sync Guardrails**:
-   - **No Upscaling Beyond Source Quality**: Probes source resolution; clamps target crop dimensions to source bounds and encodes at visually lossless `-crf 18` with `-pix_fmt yuv420p`.
-   - **Post-Export Audio Sync**: Uses `-avoid_negative_ts make_zero` and `-af aresample=async=1` to guarantee audio never drifts post-export.
-   - **Progress & Error Handling**: Step-by-step progress indication with graceful error handling and direct high-quality MP4 download.
+1. **Title Length & Keyword Inclusion**:
+   - Enforce hard limit of $\le 100$ characters per YouTube title regulations.
+   - Recommended range: 50–70 characters to prevent truncation across mobile feeds and YouTube Shorts shelves.
+   - Incorporate extracted core keywords directly from the clip's transcript and title, preventing generic or hallucinatory titles.
+2. **Shorts Description Best Practice**:
+   - Concise 1–2 sentences summarizing the specific clip's content and hook.
+3. **Hashtags Policy & Constraints**:
+   - Strictly up to 3 relevant hashtags recommended for YouTube Shorts (e.g., `#Shorts` + 1–2 topic tags).
+   - Filter and ignore any hashtags exceeding 30 characters (ignored by YouTube).
+   - Deceptive metadata guardrail: Tags must directly relate to speech transcript.
+4. **Over-tagging Violation Warning (>60 Tags)**:
+   - Official Citation: [YouTube Support — Hashtags on YouTube](https://support.google.com/youtube/answer/6390658).
+   - "If a video has more than 60 hashtags, we'll ignore each hashtag on that video. Over-tagging may result in the removal of your video from your uploads or from search."
+   - The UI and API actively flag and display alerts whenever tags exceed 60.
+5. **Manual Override & User Control**:
+   - Users can freely edit Title, Description, and Hashtags in the UI with live character and sentence counters.
+   - Clicking "Reset to AI" allows reverting back to original AI recommendations.
+   - "Save Changes" persists overrides to the client/backend metadata suite.
+
 
 
 

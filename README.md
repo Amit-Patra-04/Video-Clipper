@@ -32,7 +32,7 @@
   - Live aspect ratio reframing (9:16 vertical mobile, 1:1 square, 16:9 widescreen).
   - Multi-track interactive timeline with trim in/out handles, waveform visualization, diarized speaker bubbles, and real-time playhead scrubber.
   - **GSAP Kinetic Captions**: Real-time karaoke text animations with viral presets (*Alex Hormozi*, *MrBeast*, *Cyber Neon*, *Minimal Clean*).
-- 📈 **AI YouTube Shorts Growth Studio**: 5 high-CTR title variations (Curiosity Gap, Urgent Warning, Contrarian, How-To), SEO descriptions, hashtag cloud, and clickable chapter timestamps.
+- 📈 **AI YouTube Shorts Growth Studio**: Official YouTube policy-compliant metadata engine (titles $\le 100$ chars with clip keywords, 1–2 sentence descriptions, $\le 3$ hashtags, $>60$ tags over-tagging alerts citing [YouTube Support](https://support.google.com/youtube/answer/6390658), and manual overrides with live character/sentence counters).
 - 🚀 **Export Engine**: FFmpeg rendering pipeline with burned-in ASS kinetic subtitles, crop scaling, and EBU R128 audio loudness normalization.
 
 ---
