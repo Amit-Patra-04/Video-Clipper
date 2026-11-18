@@ -74,3 +74,19 @@ Implement spectral centroid and pause clustering to assign speaker identities (`
 ### Rationale
 - CSS transitions struggle with sub-frame synchronization when scrubbing or playing video at variable frame rates. GSAP's timeline and easing functions (`back.out(2)`, `bounce.out`) provide the exact punchy, bouncy animations popularized by top short-form creators.
 - Burning ASS subtitles with FFmpeg ensures that the rendered exported MP4 file looks identical across all social media platforms without relying on platform subtitle support.
+
+---
+
+## 6. PySceneDetect & Cloud Speech-to-Text Pipeline Integration
+
+### Decision
+1. **Scene Boundary Detection**: Employ **PySceneDetect** with `ContentDetector(threshold=27.0)` as primary visual cut detector, returning SMPTE standard timecodes (`HH:MM:SS.mmm`) with an FFmpeg filter fallback.
+2. **Dual Cloud STT Integration**: Support both **AssemblyAI v2 API** (`speaker_labels=True` for native cloud diarization) and **OpenAI Whisper API** with word timestamps (`timestamp_granularities=["word", "segment"]`).
+3. **Resilient Worker Pipeline with Retries**: Execute background processing through `VideoPipelineWorker` with exponential backoff (up to 3 retries) and real-time database milestone tracking (`"Extracting Audio"`, `"Transcribed"`, `"Scanning Scenes"`, `"Scanned Scenes"`, `"Completed"`, `"Failed"`).
+4. **Auto-Migrating SQLite Schema**: Automatic non-destructive column detection and addition (`ALTER TABLE jobs ADD COLUMN ...`) in `init_db()` ensuring smooth local zero-downtime upgrades.
+
+### Rationale
+- PySceneDetect provides mathematically robust scene transition analysis in HSV color space, avoiding false positives caused by subtle lighting changes while accurately detecting cuts, dissolves, and camera angle shifts.
+- AssemblyAI's native diarization provides speaker recognition out-of-the-box, paired with Whisper for word timestamps.
+- Worker retries with exponential backoff protect against transient file locks and intermittent network timeouts on external API calls.
+

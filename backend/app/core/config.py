@@ -31,6 +31,13 @@ class Settings(BaseSettings):
     # External APIs
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
+    ASSEMBLYAI_API_KEY: str = os.getenv("ASSEMBLYAI_API_KEY", "")
+
+    # Timeout & Retry settings
+    SUBPROCESS_TIMEOUT_SECONDS: int = 120
+    HTTP_TIMEOUT_SECONDS: float = 120.0
+    MAX_WORKER_RETRIES: int = 3
+    RETRY_BACKOFF_SECONDS: float = 2.0
     
     # FFmpeg executable resolution
     FFMPEG_PATH: str = ""

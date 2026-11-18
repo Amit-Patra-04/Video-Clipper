@@ -4,7 +4,9 @@ from app.services.diarization_service import diarization_service
 
 @pytest.mark.asyncio
 async def test_stt_transcription(sample_wav):
-    segments = await stt_service.transcribe_audio(sample_wav)
+    result = await stt_service.transcribe_audio(sample_wav)
+    assert result is not None
+    segments = result["segments"] if isinstance(result, dict) else result
     assert len(segments) > 0
     seg = segments[0]
     assert seg.start >= 0.0

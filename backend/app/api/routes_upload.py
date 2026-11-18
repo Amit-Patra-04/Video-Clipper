@@ -111,21 +111,13 @@ async def upload_video_or_youtube(
             message="Upload successful, job queued"
         )
 
-        # Trigger background processing worker
-        async def run_worker_and_update(j_id: str, v_id: str, path: str, title: str):
-            db_update_job(j_id, status="processing", progress=15, message="Analyzing video streams...")
-            try:
-                await pipeline_worker.execute_pipeline(video_id=v_id, video_path=path, title=title)
-                db_update_job(j_id, status="completed", progress=100, message="Analysis complete! Clips ready.")
-            except Exception as ex:
-                db_update_job(j_id, status="failed", error=str(ex), message=f"Pipeline error: {str(ex)}")
-
+        # Trigger background processing worker with retries and DB milestone updates
         background_tasks.add_task(
-            run_worker_and_update,
-            j_id=job.id,
-            v_id=video_id,
-            path=dest_path,
-            title=safe_filename
+            pipeline_worker.execute_pipeline,
+            video_id=video_id,
+            video_path=dest_path,
+            title=safe_filename,
+            job_id=job.id
         )
 
         return UploadJobResponse(
@@ -203,6 +195,39 @@ def get_job_status(job_id: str):
     if not job:
         raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found.")
     return job.to_dict()
+
+@router.get("/jobs/{job_id}/transcript")
+def get_job_transcript(job_id: str):
+    """Retrieve the timestamped transcript JSON (with words and times) saved in DB."""
+    job = db_get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found.")
+    data = job.to_dict()
+    if not data.get("transcript"):
+        raise HTTPException(status_code=404, detail=f"Transcript not yet generated for job '{job_id}'. Current stage: {job.current_stage}")
+    return {
+        "job_id": job_id,
+        "video_id": job.video_id,
+        "stage": job.current_stage,
+        "transcript": data["transcript"]
+    }
+
+@router.get("/jobs/{job_id}/scenes")
+def get_job_scenes(job_id: str):
+    """Retrieve the array of timecodes for detected scenes saved in DB."""
+    job = db_get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found.")
+    data = job.to_dict()
+    if not data.get("scenes"):
+        raise HTTPException(status_code=404, detail=f"Scenes not yet scanned for job '{job_id}'. Current stage: {job.current_stage}")
+    return {
+        "job_id": job_id,
+        "video_id": job.video_id,
+        "stage": job.current_stage,
+        "scene_count": len(data["scenes"]),
+        "scenes": data["scenes"]
+    }
 
 @router.get("/jobs")
 def list_jobs(limit: int = 20):
