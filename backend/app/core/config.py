@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/api"
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
+    ALLOW_YOUTUBE_DOWNLOAD: bool = False
     
     # Storage paths
     BASE_DIR: Path = Path(__file__).resolve().parent.parent.parent
@@ -111,6 +112,8 @@ class Settings(BaseSettings):
 
     class Config:
         case_sensitive = True
+        extra = "ignore"
+        env_file = ".env"
 
 settings = Settings()
 

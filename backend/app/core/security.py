@@ -268,7 +268,7 @@ def check_youtube_permissions() -> Tuple[bool, str]:
     """
     oauth_token = os.getenv("YOUTUBE_OAUTH_TOKEN", "")
     api_key = os.getenv("YOUTUBE_API_KEY", "")
-    allow_dev = os.getenv("ALLOW_YOUTUBE_DOWNLOAD", "").lower() in ("true", "1", "yes")
+    allow_dev = getattr(settings, "ALLOW_YOUTUBE_DOWNLOAD", False) or os.getenv("ALLOW_YOUTUBE_DOWNLOAD", "").lower() in ("true", "1", "yes")
 
     if not oauth_token and not api_key and not allow_dev:
         policy_warning = (
