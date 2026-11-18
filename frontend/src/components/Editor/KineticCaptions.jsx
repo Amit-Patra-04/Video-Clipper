@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 
 export default function KineticCaptions({
@@ -12,9 +12,7 @@ export default function KineticCaptions({
   const containerRef = useRef(null);
 
   // Find the current active speech segment
-  const activeSegment = segments?.find(
-    (s) => currentTime >= s.start && currentTime <= s.end
-  );
+  const activeSegment = segments?.find(s => currentTime >= s.start && currentTime <= s.end);
 
   // Find words in active segment
   const activeWords = activeSegment?.words || [];
@@ -25,21 +23,22 @@ export default function KineticCaptions({
 
   if (activeWords.length > 0) {
     const chunkIdx = Math.floor(
-      activeWords.findIndex((w) => currentTime >= w.start && currentTime <= w.end) / 3
+      activeWords.findIndex(w => currentTime >= w.start && currentTime <= w.end) / 3
     );
     const startIdx = Math.max(0, chunkIdx * 3);
     currentChunk = activeWords.slice(startIdx, startIdx + 3);
 
-    activeWordIndex = currentChunk.findIndex(
-      (w) => currentTime >= w.start && currentTime <= w.end
-    );
+    activeWordIndex = currentChunk.findIndex(w => currentTime >= w.start && currentTime <= w.end);
   } else if (activeSegment) {
     // Fallback if segment has no word timestamps
-    currentChunk = activeSegment.text.split(' ').slice(0, 5).map((w, i) => ({
-      word: w,
-      start: activeSegment.start,
-      end: activeSegment.end
-    }));
+    currentChunk = activeSegment.text
+      .split(' ')
+      .slice(0, 5)
+      .map((w, _i) => ({
+        word: w,
+        start: activeSegment.start,
+        end: activeSegment.end
+      }));
     activeWordIndex = 0;
   }
 
@@ -81,7 +80,7 @@ export default function KineticCaptions({
   };
 
   // Preset styles
-  const getPresetStyles = (isActive) => {
+  const getPresetStyles = isActive => {
     switch (preset) {
       case 'hormozi':
         return {
@@ -89,7 +88,8 @@ export default function KineticCaptions({
           fontWeight: 900,
           textTransform: 'uppercase',
           color: isActive ? activeColor : '#FFFFFF',
-          textShadow: '3px 3px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 0 4px 12px rgba(0,0,0,0.9)',
+          textShadow:
+            '3px 3px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 0 4px 12px rgba(0,0,0,0.9)',
           display: 'inline-block'
         };
       case 'mrbeast':

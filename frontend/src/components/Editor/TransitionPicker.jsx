@@ -1,5 +1,4 @@
-import React from 'react';
-import { Sparkles, SlidersHorizontal } from 'lucide-react';
+import { SlidersHorizontal } from 'lucide-react';
 
 const TRANSITIONS = [
   { id: 'cut', label: 'Jump Cut', desc: 'Direct snappy edit' },
@@ -20,7 +19,7 @@ export default function TransitionPicker({ selected, onSelect }) {
       </div>
 
       <div className="grid grid-cols-2 gap-2">
-        {TRANSITIONS.map((t) => {
+        {TRANSITIONS.map(t => {
           const isSelected = selected === t.id;
           return (
             <button

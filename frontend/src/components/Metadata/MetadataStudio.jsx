@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   Sparkles,
   Copy,
@@ -10,11 +10,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 
-export default function MetadataStudio({
-  metadata,
-  onRegenerate,
-  isLoading
-}) {
+export default function MetadataStudio({ metadata, onRegenerate, isLoading }) {
   const [copiedKey, setCopiedKey] = useState(null);
 
   const copyToClipboard = (text, key) => {
@@ -109,7 +105,11 @@ export default function MetadataStudio({
             onClick={() => copyToClipboard(metadata.description, 'desc')}
             className="text-[11px] text-indigo-400 hover:text-indigo-300 flex items-center gap-1"
           >
-            {copiedKey === 'desc' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+            {copiedKey === 'desc' ? (
+              <Check className="w-3 h-3 text-emerald-400" />
+            ) : (
+              <Copy className="w-3 h-3" />
+            )}
             <span>Copy Full Description</span>
           </button>
         </div>

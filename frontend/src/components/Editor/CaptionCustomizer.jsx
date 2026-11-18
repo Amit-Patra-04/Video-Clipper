@@ -1,5 +1,4 @@
-import React from 'react';
-import { Type, Palette, AlignVerticalJustifyCenter, Sparkles } from 'lucide-react';
+import { Type, Sparkles } from 'lucide-react';
 
 const PRESETS = [
   { id: 'hormozi', name: 'Alex Hormozi', tag: 'Pop & Stroke', sample: 'VIRAL HOOK' },
@@ -35,7 +34,7 @@ export default function CaptionCustomizer({ config, onChange }) {
           Viral Caption Styles
         </label>
         <div className="grid grid-cols-2 gap-2">
-          {PRESETS.map((p) => {
+          {PRESETS.map(p => {
             const isSelected = config.preset === p.id;
             return (
               <button
@@ -66,7 +65,7 @@ export default function CaptionCustomizer({ config, onChange }) {
           <span className="text-[11px] font-mono text-slate-500">{config.activeColor}</span>
         </label>
         <div className="flex items-center gap-2.5">
-          {COLORS.map((c) => {
+          {COLORS.map(c => {
             const isSelected = config.activeColor.toLowerCase() === c.hex.toLowerCase();
             return (
               <button
@@ -97,7 +96,7 @@ export default function CaptionCustomizer({ config, onChange }) {
           min="18"
           max="42"
           value={config.fontSize}
-          onChange={(e) => onChange({ ...config, fontSize: Number(e.target.value) })}
+          onChange={e => onChange({ ...config, fontSize: Number(e.target.value) })}
           className="w-full accent-indigo-500 bg-slate-950 h-1.5 rounded-lg cursor-pointer"
         />
       </div>
@@ -108,7 +107,7 @@ export default function CaptionCustomizer({ config, onChange }) {
           Vertical Screen Position
         </label>
         <div className="grid grid-cols-3 gap-2">
-          {['top', 'center', 'bottom'].map((pos) => {
+          {['top', 'center', 'bottom'].map(pos => {
             const isSelected = config.position === pos;
             return (
               <button

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { Upload, Film, AlertTriangle, PlayCircle, Loader2 } from 'lucide-react';
 
 export default function UploadModal({ onUpload, onDemoLoad, isUploading }) {
@@ -7,7 +7,7 @@ export default function UploadModal({ onUpload, onDemoLoad, isUploading }) {
   const [error, setError] = useState(null);
   const fileInputRef = useRef(null);
 
-  const handleDrag = (e) => {
+  const handleDrag = e => {
     e.preventDefault();
     e.stopPropagation();
     if (e.type === 'dragenter' || e.type === 'dragover') {
@@ -17,7 +17,7 @@ export default function UploadModal({ onUpload, onDemoLoad, isUploading }) {
     }
   };
 
-  const validateAndSelect = (file) => {
+  const validateAndSelect = file => {
     setError(null);
     if (!file) return;
 
@@ -37,7 +37,7 @@ export default function UploadModal({ onUpload, onDemoLoad, isUploading }) {
     setSelectedFile(file);
   };
 
-  const handleDrop = (e) => {
+  const handleDrop = e => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
@@ -78,7 +78,7 @@ export default function UploadModal({ onUpload, onDemoLoad, isUploading }) {
           type="file"
           accept="video/mp4,video/quicktime,video/webm,video/x-matroska,.mp4,.mov,.webm,.mkv"
           className="hidden"
-          onChange={(e) => e.target.files && validateAndSelect(e.target.files[0])}
+          onChange={e => e.target.files && validateAndSelect(e.target.files[0])}
         />
 
         <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 mb-4 shadow-inner">
@@ -95,9 +95,12 @@ export default function UploadModal({ onUpload, onDemoLoad, isUploading }) {
         ) : (
           <div className="space-y-1.5">
             <p className="text-sm font-medium text-slate-300">
-              Drag & drop your video here, or <span className="text-indigo-400 font-semibold underline">browse</span>
+              Drag & drop your video here, or{' '}
+              <span className="text-indigo-400 font-semibold underline">browse</span>
             </p>
-            <p className="text-xs text-slate-500">Max size 500 MB • Up to 4K resolution supported</p>
+            <p className="text-xs text-slate-500">
+              Max size 500 MB • Up to 4K resolution supported
+            </p>
           </div>
         )}
       </div>

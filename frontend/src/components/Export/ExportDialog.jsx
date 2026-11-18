@@ -1,14 +1,5 @@
-import React, { useState } from 'react';
-import {
-  Download,
-  Film,
-  Sparkles,
-  Volume2,
-  CheckCircle2,
-  X,
-  Loader2,
-  Check
-} from 'lucide-react';
+import { useState } from 'react';
+import { Download, Film, Sparkles, Volume2, CheckCircle2, X, Loader2 } from 'lucide-react';
 import { apiClient } from '../../api/client';
 
 export default function ExportDialog({
@@ -85,7 +76,8 @@ export default function ExportDialog({
             <div className="space-y-1">
               <h4 className="text-base font-bold text-white">Rendering Complete!</h4>
               <p className="text-xs text-slate-400">
-                Duration: {renderResult.duration}s • File Size: {(renderResult.file_size_bytes / (1024 * 1024)).toFixed(2)} MB
+                Duration: {renderResult.duration}s • File Size:{' '}
+                {(renderResult.file_size_bytes / (1024 * 1024)).toFixed(2)} MB
               </p>
             </div>
 
@@ -109,12 +101,15 @@ export default function ExportDialog({
               <div className="flex justify-between">
                 <span className="text-slate-500">Trim Range:</span>
                 <span className="font-mono text-slate-200">
-                  {trimStart.toFixed(1)}s - {trimEnd.toFixed(1)}s ({(trimEnd - trimStart).toFixed(1)}s)
+                  {trimStart.toFixed(1)}s - {trimEnd.toFixed(1)}s (
+                  {(trimEnd - trimStart).toFixed(1)}s)
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">Caption Style:</span>
-                <span className="font-semibold text-slate-200 capitalize">{captionConfig.preset}</span>
+                <span className="font-semibold text-slate-200 capitalize">
+                  {captionConfig.preset}
+                </span>
               </div>
             </div>
 
@@ -124,13 +119,15 @@ export default function ExportDialog({
                 <Sparkles className="w-4 h-4 text-indigo-400" />
                 <div>
                   <div className="text-xs font-semibold text-slate-200">Burn Kinetic Captions</div>
-                  <div className="text-[10px] text-slate-500">Hardcode animated karaoke ASS subtitles</div>
+                  <div className="text-[10px] text-slate-500">
+                    Hardcode animated karaoke ASS subtitles
+                  </div>
                 </div>
               </div>
               <input
                 type="checkbox"
                 checked={burnCaptions}
-                onChange={(e) => setBurnCaptions(e.target.checked)}
+                onChange={e => setBurnCaptions(e.target.checked)}
                 className="w-4 h-4 accent-indigo-500 cursor-pointer"
               />
             </div>
@@ -140,14 +137,18 @@ export default function ExportDialog({
               <div className="flex items-center gap-2.5">
                 <Volume2 className="w-4 h-4 text-emerald-400" />
                 <div>
-                  <div className="text-xs font-semibold text-slate-200">EBU R128 Audio Normalization</div>
-                  <div className="text-[10px] text-slate-500">Standardize loudness (-16 LUFS) for mobile feeds</div>
+                  <div className="text-xs font-semibold text-slate-200">
+                    EBU R128 Audio Normalization
+                  </div>
+                  <div className="text-[10px] text-slate-500">
+                    Standardize loudness (-16 LUFS) for mobile feeds
+                  </div>
                 </div>
               </div>
               <input
                 type="checkbox"
                 checked={audioNormalize}
-                onChange={(e) => setAudioNormalize(e.target.checked)}
+                onChange={e => setAudioNormalize(e.target.checked)}
                 className="w-4 h-4 accent-indigo-500 cursor-pointer"
               />
             </div>

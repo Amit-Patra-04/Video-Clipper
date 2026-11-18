@@ -1,4 +1,3 @@
-import React from 'react';
 import { Smartphone, Square, Tv } from 'lucide-react';
 
 const RATIOS = [
@@ -10,7 +9,7 @@ const RATIOS = [
 export default function AspectRatioSelector({ value, onChange }) {
   return (
     <div className="flex items-center gap-2 p-1.5 bg-slate-900/90 border border-slate-800 rounded-xl">
-      {RATIOS.map((r) => {
+      {RATIOS.map(r => {
         const Icon = r.icon;
         const isSelected = value === r.id;
         return (

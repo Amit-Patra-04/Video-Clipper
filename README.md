@@ -56,6 +56,21 @@ For full system diagrams, database schemas, and data flow specifications, see [A
 
 ---
 
+## 📦 Chosen Versions & Technology Rationale
+
+| Technology | Version | Purpose & Strategic Rationale |
+| :--- | :--- | :--- |
+| **Vite** | `^8.3.6` | **Dev Speed & Instant HMR**: Native ESM-based dev server starting in under 250ms with sub-second hot module replacement, replacing slow legacy Webpack bundling. |
+| **React** | `^19.3.1` | **Component Architecture & Hooks**: Pure functional components leveraging `useState`, `useEffect`, `useRef`, and `useCallback` for high-frequency video playback timeline synchronization without re-render lag. |
+| **Tailwind CSS** | `^4.3.5` | **Modern Design System**: Next-gen CSS-first engine paired with custom brand color tokens (`brand-primary`, `brand-viral`, `brand-neon`, `brand-karaoke`) and typography scale with zero runtime overhead. |
+| **GSAP (GreenSock)** | `^3.15.1` | **Kinetic Typography & Timeline Animation**: Industry-standard 60fps animation engine used for sub-millisecond karaoke word pop-ins and load animations that CSS transitions cannot achieve. |
+| **ESLint & Prettier** | `v9.39` / `v3.10` | **Code Quality & Formatting**: Flat configuration with React hooks rules enforcing functional immutability and unified style standards. |
+| **Vitest** | `^5.1.1` | **Fast Unit & Component Testing**: Runs in-memory with jsdom sharing the exact same Vite pipeline and plugins without duplicate Babel compilation. |
+| **FastAPI** | `>=0.110.0` | **High-Throughput Async Backend**: Native async Python framework generating OpenAPI specs and streaming video data directly to client. |
+| **FFmpeg** | `9.0.2` | **Industrial Media Processing**: Audio extraction (16kHz mono), scene change detection, video reframing (9:16/1:1), and burning kinetic ASS subtitles. |
+
+---
+
 ## 📂 Repository Structure
 
 ```

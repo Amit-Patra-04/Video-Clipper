@@ -1,14 +1,37 @@
-import React from 'react';
 import { Flame, Zap, Eye, BookOpen } from 'lucide-react';
 
 export default function ViralityScoreCard({ breakdown, score, reason }) {
   if (!breakdown) return null;
 
   const metrics = [
-    { label: 'Opening Hook', val: breakdown.hook_score, icon: Flame, color: 'text-amber-400', weight: '35%' },
-    { label: 'Audio Energy', val: breakdown.audio_energy_score, icon: Zap, color: 'text-yellow-400', weight: '25%' },
-    { label: 'Visual Pacing', val: breakdown.visual_pacing_score, icon: Eye, color: 'text-cyan-400', weight: '20%' },
-    { label: 'Story Arc', val: breakdown.topic_coherence_score, icon: BookOpen, color: 'text-purple-400', weight: '20%' }
+    {
+      label: 'Opening Hook',
+      val: breakdown.hook_score,
+      icon: Flame,
+      color: 'text-amber-400',
+      weight: '35%'
+    },
+    {
+      label: 'Audio Energy',
+      val: breakdown.audio_energy_score,
+      icon: Zap,
+      color: 'text-yellow-400',
+      weight: '25%'
+    },
+    {
+      label: 'Visual Pacing',
+      val: breakdown.visual_pacing_score,
+      icon: Eye,
+      color: 'text-cyan-400',
+      weight: '20%'
+    },
+    {
+      label: 'Story Arc',
+      val: breakdown.topic_coherence_score,
+      icon: BookOpen,
+      color: 'text-purple-400',
+      weight: '20%'
+    }
   ];
 
   return (
@@ -19,7 +42,7 @@ export default function ViralityScoreCard({ breakdown, score, reason }) {
       </div>
 
       <div className="grid grid-cols-2 gap-2">
-        {metrics.map((m) => {
+        {metrics.map(m => {
           const Icon = m.icon;
           return (
             <div key={m.label} className="p-2 rounded-lg bg-slate-900/60 border border-slate-800">
@@ -31,10 +54,7 @@ export default function ViralityScoreCard({ breakdown, score, reason }) {
                 <span className="font-mono text-slate-400">{m.val}%</span>
               </div>
               <div className="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-indigo-500 rounded-full"
-                  style={{ width: `${m.val}%` }}
-                />
+                <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${m.val}%` }} />
               </div>
             </div>
           );
@@ -43,7 +63,7 @@ export default function ViralityScoreCard({ breakdown, score, reason }) {
 
       {reason && (
         <p className="text-[11px] text-slate-400 leading-relaxed italic border-t border-slate-800/80 pt-2">
-          "{reason}"
+          &ldquo;{reason}&rdquo;
         </p>
       )}
     </div>

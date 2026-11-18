@@ -1,5 +1,3 @@
-import React from 'react';
-
 export default function Badge({ children, variant = 'default', size = 'md' }) {
   const variants = {
     default: 'bg-slate-800 text-slate-300 border-slate-700',
@@ -16,7 +14,9 @@ export default function Badge({ children, variant = 'default', size = 'md' }) {
   };
 
   return (
-    <span className={`inline-flex items-center gap-1.5 font-semibold rounded-full border ${variants[variant]} ${sizes[size]}`}>
+    <span
+      className={`inline-flex items-center gap-1.5 font-semibold rounded-full border ${variants[variant]} ${sizes[size]}`}
+    >
       {children}
     </span>
   );

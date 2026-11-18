@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import {
   FileVideo,
@@ -13,12 +13,42 @@ import {
 } from 'lucide-react';
 
 const STAGES = [
-  { id: 'probing', label: 'Probing & Inspection', icon: FileVideo, desc: 'Probing video stream, fps, and codecs' },
-  { id: 'audio_extract', label: 'FFmpeg Audio Extraction', icon: AudioWaveform, desc: 'Extracting 16kHz mono PCM stream' },
-  { id: 'stt', label: 'Speech-to-Text Transcribe', icon: MessageSquareText, desc: 'Whisper word-level timestamp alignment' },
-  { id: 'diarize', label: 'Speaker Diarization', icon: Users, desc: 'Clustering dialogue turns & speakers' },
-  { id: 'scene_detect', label: 'Visual Scene Cuts', icon: Film, desc: 'FFmpeg scene change sensitivity filter' },
-  { id: 'highlight_ranking', label: 'AI Virality Scoring', icon: Sparkles, desc: 'Hook strength & acoustic energy ranking' }
+  {
+    id: 'probing',
+    label: 'Probing & Inspection',
+    icon: FileVideo,
+    desc: 'Probing video stream, fps, and codecs'
+  },
+  {
+    id: 'audio_extract',
+    label: 'FFmpeg Audio Extraction',
+    icon: AudioWaveform,
+    desc: 'Extracting 16kHz mono PCM stream'
+  },
+  {
+    id: 'stt',
+    label: 'Speech-to-Text Transcribe',
+    icon: MessageSquareText,
+    desc: 'Whisper word-level timestamp alignment'
+  },
+  {
+    id: 'diarize',
+    label: 'Speaker Diarization',
+    icon: Users,
+    desc: 'Clustering dialogue turns & speakers'
+  },
+  {
+    id: 'scene_detect',
+    label: 'Visual Scene Cuts',
+    icon: Film,
+    desc: 'FFmpeg scene change sensitivity filter'
+  },
+  {
+    id: 'highlight_ranking',
+    label: 'AI Virality Scoring',
+    icon: Sparkles,
+    desc: 'Hook strength & acoustic energy ranking'
+  }
 ];
 
 export default function PipelineStatus({ progress, onRetry }) {
@@ -36,7 +66,7 @@ export default function PipelineStatus({ progress, onRetry }) {
   }, [progress.progress]);
 
   const getCurrentIndex = () => {
-    const idx = STAGES.findIndex((s) => s.id === progress.current_stage);
+    const idx = STAGES.findIndex(s => s.id === progress.current_stage);
     return idx === -1 ? 0 : idx;
   };
 
@@ -44,7 +74,10 @@ export default function PipelineStatus({ progress, onRetry }) {
   const isFailed = progress.status === 'failed';
 
   return (
-    <div ref={containerRef} className="max-w-2xl mx-auto bg-slate-900/80 border border-slate-800 rounded-2xl p-6 sm:p-8 backdrop-blur-md shadow-2xl">
+    <div
+      ref={containerRef}
+      className="max-w-2xl mx-auto bg-slate-900/80 border border-slate-800 rounded-2xl p-6 sm:p-8 backdrop-blur-md shadow-2xl"
+    >
       <div className="flex items-center justify-between mb-6">
         <div>
           <h3 className="text-xl font-extrabold text-white flex items-center gap-2">
@@ -94,7 +127,8 @@ export default function PipelineStatus({ progress, onRetry }) {
         {STAGES.map((stage, idx) => {
           const Icon = stage.icon;
           const isDone = progress.stages_completed?.includes(stage.id) || idx < activeIdx;
-          const isCurrent = progress.current_stage === stage.id && !isFailed && progress.status !== 'completed';
+          const isCurrent =
+            progress.current_stage === stage.id && !isFailed && progress.status !== 'completed';
 
           return (
             <div
@@ -103,8 +137,8 @@ export default function PipelineStatus({ progress, onRetry }) {
                 isCurrent
                   ? 'bg-indigo-500/10 border-indigo-500/40 text-white shadow-md'
                   : isDone
-                  ? 'bg-slate-950/40 border-slate-800/80 text-slate-300'
-                  : 'bg-slate-950/20 border-slate-900 text-slate-500'
+                    ? 'bg-slate-950/40 border-slate-800/80 text-slate-300'
+                    : 'bg-slate-950/20 border-slate-900 text-slate-500'
               }`}
             >
               <div
@@ -112,8 +146,8 @@ export default function PipelineStatus({ progress, onRetry }) {
                   isDone
                     ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
                     : isCurrent
-                    ? 'bg-indigo-600 text-white animate-pulse'
-                    : 'bg-slate-800/60 text-slate-600'
+                      ? 'bg-indigo-600 text-white animate-pulse'
+                      : 'bg-slate-800/60 text-slate-600'
                 }`}
               >
                 {isDone ? <CheckCircle2 className="w-5 h-5" /> : <Icon className="w-4 h-4" />}
@@ -123,11 +157,11 @@ export default function PipelineStatus({ progress, onRetry }) {
                 <div className="flex items-center justify-between">
                   <h4 className="text-sm font-semibold truncate">{stage.label}</h4>
                   {isCurrent && (
-                    <span className="text-[11px] font-mono text-indigo-400 animate-pulse">Running...</span>
+                    <span className="text-[11px] font-mono text-indigo-400 animate-pulse">
+                      Running...
+                    </span>
                   )}
-                  {isDone && (
-                    <span className="text-[11px] text-emerald-400 font-medium">Done</span>
-                  )}
+                  {isDone && <span className="text-[11px] text-emerald-400 font-medium">Done</span>}
                 </div>
                 <p className="text-[11px] text-slate-400 truncate">{stage.desc}</p>
               </div>

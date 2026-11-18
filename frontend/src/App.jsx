@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Header from './components/Common/Header';
 import NotificationToast from './components/Common/NotificationToast';
 import UploadModal from './components/Ingestion/UploadModal';
@@ -13,15 +13,7 @@ import HighlightLeaderboard from './components/Highlights/HighlightLeaderboard';
 import MetadataStudio from './components/Metadata/MetadataStudio';
 import ExportDialog from './components/Export/ExportDialog';
 import { apiClient } from './api/client';
-import {
-  Flame,
-  Type,
-  TrendingUp,
-  Download,
-  Film,
-  Sparkles,
-  Layers
-} from 'lucide-react';
+import { Flame, Type, TrendingUp, Download, Film, Sparkles, Layers } from 'lucide-react';
 
 export default function App() {
   // App view stage: 'ingest' | 'pipeline' | 'editor'
@@ -73,6 +65,18 @@ export default function App() {
 
   const pollIntervalRef = useRef(null);
 
+  const loadMetadata = async (vId, cId) => {
+    setIsMetadataLoading(true);
+    try {
+      const data = await apiClient.generateMetadata(vId, cId);
+      setMetadataSuite(data);
+    } catch (err) {
+      console.error('Metadata generation error:', err);
+    } finally {
+      setIsMetadataLoading(false);
+    }
+  };
+
   // Poll pipeline progress while processing
   useEffect(() => {
     if (stage === 'pipeline' && videoId) {
@@ -123,20 +127,8 @@ export default function App() {
     };
   }, [stage, videoId]);
 
-  const loadMetadata = async (vId, cId) => {
-    setIsMetadataLoading(true);
-    try {
-      const data = await apiClient.generateMetadata(vId, cId);
-      setMetadataSuite(data);
-    } catch (err) {
-      console.error('Metadata generation error:', err);
-    } finally {
-      setIsMetadataLoading(false);
-    }
-  };
-
   // Upload handler
-  const handleUpload = async (file) => {
+  const handleUpload = async file => {
     setIsUploading(true);
     try {
       const res = await apiClient.uploadVideo(file);
@@ -164,7 +156,7 @@ export default function App() {
   };
 
   // YouTube Ingest handler
-  const handleYoutube = async (url) => {
+  const handleYoutube = async url => {
     setIsYoutubeLoading(true);
     try {
       const res = await apiClient.ingestYoutube(url);
@@ -200,7 +192,9 @@ export default function App() {
     setTrimEnd(34.2);
     setCurrentTime(4.5);
     // Use an online royalty free sample video
-    setVideoSrc('https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4');
+    setVideoSrc(
+      'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4'
+    );
 
     const demoSegments = [
       {
@@ -275,8 +269,10 @@ export default function App() {
           visual_pacing_score: 92.0,
           topic_coherence_score: 95.0
         },
-        reason: 'Exceptional curiosity gap opening hook coupled with high acoustic energy burst in first 3 seconds.',
-        transcript_snippet: 'The secret reason why everyone fails at virality revealed. When you change your hook by 300 percent...',
+        reason:
+          'Exceptional curiosity gap opening hook coupled with high acoustic energy burst in first 3 seconds.',
+        transcript_snippet:
+          'The secret reason why everyone fails at virality revealed. When you change your hook by 300 percent...',
         suggested_aspect_ratio: '9:16'
       },
       {
@@ -293,7 +289,8 @@ export default function App() {
           visual_pacing_score: 85.0,
           topic_coherence_score: 88.0
         },
-        reason: 'Punchy data-backed metric hook with fast pacing ideal for short-form scroll-stopping feeds.',
+        reason:
+          'Punchy data-backed metric hook with fast pacing ideal for short-form scroll-stopping feeds.',
         transcript_snippet: 'When you change your hook by 300 percent, viewers stay hooked...',
         suggested_aspect_ratio: '9:16'
       }
@@ -311,7 +308,7 @@ export default function App() {
     });
   };
 
-  const handleSelectClip = (clip) => {
+  const handleSelectClip = clip => {
     setSelectedClip(clip);
     setTrimStart(clip.start);
     setTrimEnd(clip.end);
@@ -358,10 +355,7 @@ export default function App() {
                 onDemoLoad={handleDemoLoad}
                 isUploading={isUploading}
               />
-              <YoutubeInput
-                onSubmit={handleYoutube}
-                isLoading={isYoutubeLoading}
-              />
+              <YoutubeInput onSubmit={handleYoutube} isLoading={isYoutubeLoading} />
             </div>
           </div>
         )}
@@ -400,10 +394,7 @@ export default function App() {
               </div>
 
               <div className="flex items-center gap-3">
-                <AspectRatioSelector
-                  value={aspectRatio}
-                  onChange={setAspectRatio}
-                />
+                <AspectRatioSelector value={aspectRatio} onChange={setAspectRatio} />
 
                 <button
                   onClick={() => setIsExportOpen(true)}
@@ -495,10 +486,7 @@ export default function App() {
                   )}
 
                   {activeTab === 'captions' && (
-                    <CaptionCustomizer
-                      config={captionConfig}
-                      onChange={setCaptionConfig}
-                    />
+                    <CaptionCustomizer config={captionConfig} onChange={setCaptionConfig} />
                   )}
 
                   {activeTab === 'metadata' && (
@@ -510,10 +498,7 @@ export default function App() {
                   )}
 
                   {activeTab === 'transitions' && (
-                    <TransitionPicker
-                      selected="fade"
-                      onSelect={() => {}}
-                    />
+                    <TransitionPicker selected="fade" onSelect={() => {}} />
                   )}
                 </div>
               </div>
@@ -530,7 +515,7 @@ export default function App() {
                   setTrimStart(start);
                   setTrimEnd(end);
                 }}
-                onSeek={(time) => setCurrentTime(time)}
+                onSeek={time => setCurrentTime(time)}
                 segments={segments}
               />
             </div>
@@ -551,10 +536,7 @@ export default function App() {
       />
 
       {/* Global Toast Notification */}
-      <NotificationToast
-        notification={notification}
-        onClose={() => setNotification(null)}
-      />
+      <NotificationToast notification={notification} onClose={() => setNotification(null)} />
     </div>
   );
 }

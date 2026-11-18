@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Sparkles, Flame, Clock, Play, ChevronDown, ChevronUp } from 'lucide-react';
 import ViralityScoreCard from './ViralityScoreCard';
 
@@ -57,9 +57,7 @@ export default function HighlightLeaderboard({ clips = [], selectedClipId, onSel
                   <span className="w-5 h-5 rounded-full bg-slate-800 text-[11px] font-bold text-slate-300 flex items-center justify-center shrink-0">
                     #{index + 1}
                   </span>
-                  <h4 className="text-xs font-bold text-slate-100 line-clamp-1">
-                    {clip.title}
-                  </h4>
+                  <h4 className="text-xs font-bold text-slate-100 line-clamp-1">{clip.title}</h4>
                 </div>
 
                 <div className="flex items-center gap-1.5 shrink-0">
@@ -76,24 +74,30 @@ export default function HighlightLeaderboard({ clips = [], selectedClipId, onSel
               </div>
 
               <p className="text-[11px] text-slate-400 mt-2 line-clamp-2 leading-relaxed">
-                "{clip.transcript_snippet}"
+                &ldquo;{clip.transcript_snippet}&rdquo;
               </p>
 
               <div className="mt-3 pt-2.5 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
                 <div className="flex items-center gap-2 font-mono">
                   <Clock className="w-3 h-3 text-slate-500" />
-                  <span>{clip.start.toFixed(1)}s - {clip.end.toFixed(1)}s</span>
+                  <span>
+                    {clip.start.toFixed(1)}s - {clip.end.toFixed(1)}s
+                  </span>
                   <span className="text-slate-600">({clip.duration.toFixed(0)}s)</span>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={(e) => toggleExpand(clip.id, e)}
+                    onClick={e => toggleExpand(clip.id, e)}
                     className="text-[10px] text-slate-400 hover:text-indigo-400 flex items-center gap-0.5"
                   >
                     <span>Factors</span>
-                    {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                    {isExpanded ? (
+                      <ChevronUp className="w-3 h-3" />
+                    ) : (
+                      <ChevronDown className="w-3 h-3" />
+                    )}
                   </button>
 
                   <button

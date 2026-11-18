@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import { Video, ArrowRight, ShieldCheck, Info, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { Video, ArrowRight, Info, Loader2 } from 'lucide-react';
 
 export default function YoutubeInput({ onSubmit, isLoading }) {
   const [url, setUrl] = useState('');
   const [inputError, setInputError] = useState(null);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = e => {
     e.preventDefault();
     setInputError(null);
 
@@ -41,7 +41,7 @@ export default function YoutubeInput({ onSubmit, isLoading }) {
           <input
             type="url"
             value={url}
-            onChange={(e) => {
+            onChange={e => {
               setUrl(e.target.value);
               setInputError(null);
             }}
@@ -65,9 +65,7 @@ export default function YoutubeInput({ onSubmit, isLoading }) {
           </button>
         </div>
 
-        {inputError && (
-          <p className="text-xs text-rose-400">{inputError}</p>
-        )}
+        {inputError && <p className="text-xs text-rose-400">{inputError}</p>}
 
         <div className="p-3.5 rounded-xl bg-slate-950/40 border border-slate-800 text-xs text-slate-400 space-y-1.5">
           <div className="flex items-center gap-1.5 text-slate-300 font-medium">
@@ -75,8 +73,13 @@ export default function YoutubeInput({ onSubmit, isLoading }) {
             <span>YouTube Policy & Processing Notice</span>
           </div>
           <ul className="list-disc list-inside text-[11px] text-slate-400 space-y-0.5">
-            <li>Only public or authorized videos you own or have permission to clip are permitted.</li>
-            <li>Age-restricted or DRM-encrypted streams require browser cookies and cannot be fetched directly.</li>
+            <li>
+              Only public or authorized videos you own or have permission to clip are permitted.
+            </li>
+            <li>
+              Age-restricted or DRM-encrypted streams require browser cookies and cannot be fetched
+              directly.
+            </li>
             <li>Videos over 3 hours are capped to protect processing pipeline quotas.</li>
           </ul>
         </div>

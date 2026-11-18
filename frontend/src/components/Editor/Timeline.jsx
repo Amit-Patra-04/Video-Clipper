@@ -1,5 +1,5 @@
-import React, { useRef, useState, useEffect } from 'react';
-import { Scissors, Volume2, User } from 'lucide-react';
+import { useRef, useState, useEffect, useCallback } from 'react';
+import { Scissors, User } from 'lucide-react';
 
 export default function Timeline({
   totalDuration = 60,
@@ -14,26 +14,29 @@ export default function Timeline({
   const [isDraggingPlayhead, setIsDraggingPlayhead] = useState(false);
   const [activeTrimHandle, setActiveTrimHandle] = useState(null); // 'start' | 'end' | null
 
-  const getPositionPercent = (time) => {
+  const getPositionPercent = time => {
     return Math.min(100, Math.max(0, (time / Math.max(1, totalDuration)) * 100));
   };
 
-  const getTimeFromMouseEvent = (e) => {
-    if (!containerRef.current) return 0;
-    const rect = containerRef.current.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const ratio = Math.min(1, Math.max(0, clickX / rect.width));
-    return ratio * totalDuration;
-  };
+  const getTimeFromMouseEvent = useCallback(
+    e => {
+      if (!containerRef.current) return 0;
+      const rect = containerRef.current.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const ratio = Math.min(1, Math.max(0, clickX / rect.width));
+      return ratio * totalDuration;
+    },
+    [totalDuration]
+  );
 
-  const handleMouseDown = (e) => {
+  const handleMouseDown = e => {
     const time = getTimeFromMouseEvent(e);
     onSeek(time);
     setIsDraggingPlayhead(true);
   };
 
   useEffect(() => {
-    const handleMouseMove = (e) => {
+    const handleMouseMove = e => {
       if (isDraggingPlayhead) {
         const time = getTimeFromMouseEvent(e);
         onSeek(time);
@@ -60,11 +63,20 @@ export default function Timeline({
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDraggingPlayhead, activeTrimHandle, trimStart, trimEnd, totalDuration]);
+  }, [
+    isDraggingPlayhead,
+    activeTrimHandle,
+    trimStart,
+    trimEnd,
+    totalDuration,
+    getTimeFromMouseEvent,
+    onSeek,
+    onTrimChange
+  ]);
 
   // Synthetic waveform bars (50 bars)
   const waveformBars = Array.from({ length: 60 }).map((_, i) => {
-    const h = 25 + Math.sin(i * 0.4) * 20 + ((i % 4) * 12);
+    const h = 25 + Math.sin(i * 0.4) * 20 + (i % 4) * 12;
     return Math.max(15, Math.min(90, h));
   });
 
@@ -125,7 +137,7 @@ export default function Timeline({
 
         {/* Trim IN Handle */}
         <div
-          onMouseDown={(e) => {
+          onMouseDown={e => {
             e.stopPropagation();
             setActiveTrimHandle('start');
           }}
@@ -138,7 +150,7 @@ export default function Timeline({
 
         {/* Trim OUT Handle */}
         <div
-          onMouseDown={(e) => {
+          onMouseDown={e => {
             e.stopPropagation();
             setActiveTrimHandle('end');
           }}
@@ -163,7 +175,7 @@ export default function Timeline({
         {/* Track 3: Diarized Speech Segments */}
         <div className="absolute bottom-2 left-0 right-0 h-8 flex items-center px-1">
           {segments && segments.length > 0 ? (
-            segments.map((seg) => {
+            segments.map(seg => {
               const left = getPositionPercent(seg.start);
               const width = Math.max(3, getPositionPercent(seg.end) - left);
               const isSpeaker1 = seg.speaker.includes('1');

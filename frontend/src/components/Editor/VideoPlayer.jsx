@@ -1,5 +1,5 @@
-import React, { useRef, useState, useEffect } from 'react';
-import { Play, Pause, RotateCcw, Volume2, VolumeX, Maximize2 } from 'lucide-react';
+import { useRef, useState, useEffect } from 'react';
+import { Play, Pause, RotateCcw, Volume2, VolumeX } from 'lucide-react';
 import KineticCaptions from './KineticCaptions';
 
 export default function VideoPlayer({
@@ -21,7 +21,7 @@ export default function VideoPlayer({
   const containerRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
-  const [duration, setDuration] = useState(60);
+  const [_duration, setDuration] = useState(60);
 
   // Sync external currentTime changes (e.g. from timeline scrubbing)
   useEffect(() => {
@@ -33,7 +33,7 @@ export default function VideoPlayer({
   const handleTimeUpdate = () => {
     if (!videoRef.current) return;
     const curr = videoRef.current.currentTime;
-    
+
     // Auto-loop within trim in/out range
     if (curr >= trimEnd) {
       videoRef.current.currentTime = trimStart;
@@ -52,7 +52,10 @@ export default function VideoPlayer({
       if (videoRef.current.currentTime < trimStart || videoRef.current.currentTime >= trimEnd) {
         videoRef.current.currentTime = trimStart;
       }
-      videoRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+      videoRef.current
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch(() => {});
     }
   };
 
@@ -67,7 +70,10 @@ export default function VideoPlayer({
     videoRef.current.currentTime = trimStart;
     onTimeUpdate(trimStart);
     if (!isPlaying) {
-      videoRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+      videoRef.current
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch(() => {});
     }
   };
 
@@ -147,14 +153,22 @@ export default function VideoPlayer({
           onClick={togglePlay}
           className="p-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition-colors"
         >
-          {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5 fill-white" />}
+          {isPlaying ? (
+            <Pause className="w-4 h-4" />
+          ) : (
+            <Play className="w-4 h-4 ml-0.5 fill-white" />
+          )}
         </button>
 
         <button
           onClick={toggleMute}
           className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
         >
-          {isMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4" />}
+          {isMuted ? (
+            <VolumeX className="w-4 h-4 text-rose-400" />
+          ) : (
+            <Volume2 className="w-4 h-4" />
+          )}
         </button>
 
         <div className="text-xs font-mono text-slate-300 flex items-center gap-1">
