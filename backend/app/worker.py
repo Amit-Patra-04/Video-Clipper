@@ -1,9 +1,11 @@
 import os
+import time
 import asyncio
 import traceback
 from typing import Dict, Any, List, Optional
 from app.core.config import settings
 from app.core.logger import logger
+from app.services.metrics_service import metrics_service
 from app.core.db import (
     SessionLocal,
     JobModel,
@@ -96,6 +98,9 @@ class VideoPipelineWorker:
         )
         self.progress_store[video_id] = progress
 
+        pipeline_start_time = time.time()
+        metrics_service.record_job_start(video_id)
+
         attempt = 0
         last_error = None
 
@@ -148,8 +153,11 @@ class VideoPipelineWorker:
                 # Stage 2: Audio Extraction
                 # =================================================================
                 logger.info(f"[{video_id}] Stage 2: Extracting audio...")
+                s2_start = time.time()
                 wav_path = str(settings.AUDIO_DIR / f"{video_id}.wav")
                 ffmpeg_service.extract_audio(video_path, wav_path)
+                metrics_service.record_stage_duration("audio_extract", time.time() - s2_start)
+
                 progress.stages_completed.append("audio_extract")
                 progress.progress = 45
                 progress.current_stage = "Transcribing"
@@ -167,11 +175,21 @@ class VideoPipelineWorker:
                 # Stage 3: Speech-to-Text with Word Timestamps & Speaker Labels
                 # =================================================================
                 logger.info(f"[{video_id}] Stage 3: Transcribing audio...")
+                s3_start = time.time()
                 stt_result = await stt_service.transcribe_audio(wav_path)
                 segments: List[SpeechSegment] = stt_result.get("segments", [])
+                
+                if not segments:
+                    logger.warning(f"[{video_id}] Alert: STT transcription returned 0 speech segments. Audio may be silent or corrupted.")
+                    metrics_service.record_stt_warning("zero speech segments")
+
+                metrics_service.record_stage_duration("stt", time.time() - s3_start)
 
                 # Run diarization clustering if not already speaker-labeled
+                diar_start = time.time()
                 segments = diarization_service.diarize_segments(wav_path, segments)
+                metrics_service.record_stage_duration("diarize", time.time() - diar_start)
+
                 self.transcript_store[video_id] = segments
 
                 # Milestone: Transcribed -> Save transcript JSON in DB
@@ -198,7 +216,9 @@ class VideoPipelineWorker:
                 # Stage 4: Scene Detection (PySceneDetect)
                 # =================================================================
                 logger.info(f"[{video_id}] Stage 4: Running PySceneDetect for cut points...")
+                s4_start = time.time()
                 scenes_data = scene_detector_service.detect_scenes(video_path)
+                metrics_service.record_stage_duration("scene_detect", time.time() - s4_start)
                 self.scene_store[video_id] = scenes_data
 
                 # Milestone: Scanned Scenes -> Save scene list JSON in DB
@@ -220,6 +240,7 @@ class VideoPipelineWorker:
                 # Stage 5: Multimodal AI Highlight Ranking
                 # =================================================================
                 logger.info(f"[{video_id}] Stage 5: Ranking highlights...")
+                s5_start = time.time()
                 # Adapt scene cuts for ranker
                 scene_cuts = [
                     SceneCut(timestamp=s["start_seconds"], confidence=0.85)
@@ -233,6 +254,7 @@ class VideoPipelineWorker:
                     wav_path=wav_path,
                     min_segments=settings.MIN_HIGHLIGHT_SEGMENTS
                 )
+                metrics_service.record_stage_duration("highlight_ranking", time.time() - s5_start)
                 self.clips_store[video_id] = clips
 
                 # Format segments for DB persistence
@@ -267,6 +289,9 @@ class VideoPipelineWorker:
                 progress.status = "completed"
                 progress.message = f"Analysis complete! {len(clips)} non-overlapping highlights ranked."
 
+                total_duration = time.time() - pipeline_start_time
+                metrics_service.record_job_completion(video_id, total_duration)
+
                 if job_id:
                     db_update_job(
                         job_id,
@@ -276,7 +301,7 @@ class VideoPipelineWorker:
                         message=f"Pipeline complete! {len(clips)} non-overlapping highlights ranked."
                     )
 
-                logger.info(f"[{video_id}] Pipeline completed successfully on attempt {attempt}!")
+                logger.info(f"[{video_id}] Pipeline completed successfully in {total_duration:.2f}s on attempt {attempt}!")
                 return True
 
             except Exception as e:
@@ -301,6 +326,7 @@ class VideoPipelineWorker:
         progress.status = "failed"
         progress.error = err_msg
         progress.message = f"Pipeline failed after {max_retries} attempts: {err_msg}"
+        metrics_service.record_job_failure(video_id, err_msg)
 
         if job_id:
             db_update_job(

@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "AutoClip AI Backend"
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/api"
+    ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
     
     # Storage paths
     BASE_DIR: Path = Path(__file__).resolve().parent.parent.parent

@@ -94,3 +94,45 @@ def test_api_vtt_export_and_caption_update():
     # Guardrail: Must be sanitized
     assert "<script>" not in updated_data[0]["text"]
     assert "Edited" in updated_data[0]["text"]
+
+def test_srt_generation(tmp_path):
+    """Test SubRip (.srt) timestamp formatting and generation."""
+    assert caption_service.format_srt_timestamp(4.5) == "00:00:04,500"
+    assert caption_service.format_srt_timestamp(65.123) == "00:01:05,123"
+
+    segments = [
+        SpeechSegment(id=1, speaker="Speaker 1", start=1.0, end=4.0, text="First subtitle cue", words=[]),
+        SpeechSegment(id=2, speaker="Speaker 1", start=5.0, end=9.0, text="Second subtitle cue", words=[])
+    ]
+    srt = caption_service.generate_srt(segments)
+    assert "1\n00:00:01,000 --> 00:00:04,000\nFirst subtitle cue" in srt
+    assert "2\n00:00:05,000 --> 00:00:09,000\nSecond subtitle cue" in srt
+
+def test_ass_subtitle_generation(tmp_path):
+    """Test Advanced SubStation Alpha (.ass) generation with word-level karaoke timing."""
+    from app.services.export_service import export_service
+    ass_path = str(tmp_path / "test_captions.ass")
+
+    words = [
+        WordTimestamp(word="Hello", start=2.0, end=2.5),
+        WordTimestamp(word="world", start=2.5, end=3.0),
+        WordTimestamp(word="viral", start=3.0, end=3.6)
+    ]
+    segments = [
+        SpeechSegment(id=1, speaker="Speaker 1", start=2.0, end=4.0, text="Hello world viral", words=words)
+    ]
+
+    out_path = export_service.generate_ass_subtitle_file(
+        segments=segments,
+        clip_start=1.0,
+        clip_end=5.0,
+        output_ass_path=ass_path,
+        preset="hormozi"
+    )
+    assert out_path == ass_path
+    with open(ass_path, "r", encoding="utf-8") as f:
+        content = f.read()
+    assert "[Script Info]" in content
+    assert "[V4+ Styles]" in content
+    assert "[Events]" in content
+    assert "\\k" in content # karaoke tags present

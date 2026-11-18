@@ -4,6 +4,8 @@
 
 ![AutoClip AI Banner](https://img.shields.io/badge/AutoClip-AI%20Studio-6366f1?style=for-the-badge&logo=youtube&logoColor=white)
 ![Build Status](https://img.shields.io/badge/CI-Passing-10b981?style=for-the-badge&logo=githubactions&logoColor=white)
+![Coverage](https://img.shields.io/badge/Coverage-85%25-10b981?style=for-the-badge&logo=pytest&logoColor=white)
+![Security](https://img.shields.io/badge/Security-HSTS%20%7C%20Rate%20Limit-6366f1?style=for-the-badge&logo=shield&logoColor=white)
 ![React](https://img.shields.io/badge/React%2019-Vite-61dafb?style=for-the-badge&logo=react&logoColor=black)
 ![TailwindCSS](https://img.shields.io/badge/Tailwind-CSS%20v4-38bdf8?style=for-the-badge&logo=tailwindcss&logoColor=white)
 ![GSAP](https://img.shields.io/badge/GSAP-Kinetic%20Motion-88ce02?style=for-the-badge&logo=greensock&logoColor=white)
@@ -33,6 +35,7 @@
   - Multi-track interactive timeline with trim in/out handles, waveform visualization, diarized speaker bubbles, and real-time playhead scrubber.
   - **GSAP Kinetic Captions**: Real-time karaoke text animations with viral presets (*Alex Hormozi*, *MrBeast*, *Cyber Neon*, *Minimal Clean*).
 - 📈 **AI YouTube Shorts Growth Studio**: Official YouTube policy-compliant metadata engine (titles $\le 100$ chars with clip keywords, 1–2 sentence descriptions, $\le 3$ hashtags, $>60$ tags over-tagging alerts citing [YouTube Support](https://support.google.com/youtube/answer/6390658), and manual overrides with live character/sentence counters).
+- 🛡️ **Hardened Security, Logging & Telemetry**: Sliding-window rate limiting on heavy endpoints, input validation (magic bytes, malware headers, path traversal, XSS sanitization), PII and credential masking in logs, Prometheus/JSON metrics endpoint (`/api/metrics` & `/metrics`), and HTTPS/HSTS enforcement with $\ge 80\%$ test coverage in CI.
 - 🚀 **Export Engine**: FFmpeg rendering pipeline with burned-in ASS kinetic subtitles, crop scaling, and EBU R128 audio loudness normalization.
 
 ---

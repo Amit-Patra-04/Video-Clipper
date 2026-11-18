@@ -4,13 +4,19 @@ from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
 from app.core.logger import logger
 from app.core.db import init_db
+from app.core.middleware import (
+    SecurityHeadersAndHttpsMiddleware,
+    RateLimitingMiddleware,
+    RequestLoggingAndMetricsMiddleware
+)
 from app.api import (
     ingest_router,
     pipeline_router,
     clips_router,
     metadata_router,
     export_router,
-    upload_router
+    upload_router,
+    metrics_router
 )
 
 # Initialize database
@@ -24,6 +30,15 @@ app = FastAPI(
     docs_url=f"{settings.API_V1_STR}/docs",
     redoc_url=f"{settings.API_V1_STR}/redoc"
 )
+
+# Apply Security Headers and HTTPS enforcement middleware (outermost)
+app.add_middleware(SecurityHeadersAndHttpsMiddleware)
+
+# Apply Sliding-Window Rate Limiter
+app.add_middleware(RateLimitingMiddleware)
+
+# Apply Structured Request Logging and Metrics Telemetry
+app.add_middleware(RequestLoggingAndMetricsMiddleware)
 
 # CORS setup
 app.add_middleware(
@@ -45,8 +60,9 @@ app.include_router(clips_router, prefix=settings.API_V1_STR)
 app.include_router(metadata_router, prefix=settings.API_V1_STR)
 app.include_router(export_router, prefix=settings.API_V1_STR)
 
-# Also mount upload router at root to support exact POST /upload as requested
+# Also mount upload router and metrics router at root
 app.include_router(upload_router)
+app.include_router(metrics_router)
 
 @app.get(f"{settings.API_V1_STR}/health", tags=["Health"])
 @app.get("/health", tags=["Health"])

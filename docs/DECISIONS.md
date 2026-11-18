@@ -98,11 +98,6 @@ Implement spectral centroid and pause clustering to assign speaker identities (`
 3. **Resilient Worker Pipeline with Retries**: Execute background processing through `VideoPipelineWorker` with exponential backoff (up to 3 retries) and real-time database milestone tracking (`"Extracting Audio"`, `"Transcribed"`, `"Scanning Scenes"`, `"Scanned Scenes"`, `"Completed"`, `"Failed"`).
 4. **Auto-Migrating SQLite Schema**: Automatic non-destructive column detection and addition (`ALTER TABLE jobs ADD COLUMN ...`) in `init_db()` ensuring smooth local zero-downtime upgrades.
 
-### Rationale
-- PySceneDetect provides mathematically robust scene transition analysis in HSV color space, avoiding false positives caused by subtle lighting changes while accurately detecting cuts, dissolves, and camera angle shifts.
-- AssemblyAI's native diarization provides speaker recognition out-of-the-box, paired with Whisper for word timestamps.
-- Worker retries with exponential backoff protect against transient file locks and intermittent network timeouts on external API calls.
-
 ---
 
 ## 7. Captioning System, WebVTT Generation & Real-Time Styling
@@ -115,6 +110,19 @@ Implement spectral centroid and pause clustering to assign speaker identities (`
 5. **Security & Accessibility Guardrails**:
    - **XSS Sanitization**: User inputs are stripped of malicious `<script>` and HTML tags and entity-escaped before model persistence.
    - **Semantic HTML & ARIA**: Caption container implements `role="region"`, `aria-label="Synchronized Captions"`, `aria-live="polite"`, and `role="status"` with `aria-atomic="true"`.
+
+---
+
+## 8. Clip Editor UI, Multi-Track Canvas & FFmpeg Export Pipeline
+
+### Decision
+1. **Multi-Track Timeline with HTML5 Canvas**: Visual tracks for Video (scenes & thumbnails), Audio (interactive `<canvas>` waveform peaks), and Speech (color-coded speaker blocks), paired with dynamic trim handles and red playhead scrubber.
+2. **Crop & Aspect Ratio Reframing**: Live aspect ratio selector (9:16 vertical shorts, 1:1 square, 16:9 landscape, and original resolution). Crop and trim controls immediately update the HTML5 video preview.
+3. **Scene Transitions (Cut & Fade)**: Supports instant Jump Cuts (`cut`) and smooth Cross-Dissolves (`fade`), implemented with FFmpeg's `fade=t=in...` and `afade=t=in...` filters.
+4. **Quality & Audio Sync Guardrails**:
+   - **No Upscaling Beyond Source Quality**: Probes source resolution; clamps target crop dimensions to source bounds and encodes at visually lossless `-crf 18` with `-pix_fmt yuv420p`.
+   - **Post-Export Audio Sync**: Uses `-avoid_negative_ts make_zero` and `-af aresample=async=1` to guarantee audio never drifts post-export.
+   - **Progress & Error Handling**: Step-by-step progress indication with graceful error handling and direct high-quality MP4 download.
 
 ---
 
@@ -140,6 +148,24 @@ Implement spectral centroid and pause clustering to assign speaker identities (`
    - Clicking "Reset to AI" allows reverting back to original AI recommendations.
    - "Save Changes" persists overrides to the client/backend metadata suite.
 
+---
 
+## 10. Security Hardening, Structured Logging, and Telemetry Instrumentation
 
-
+### Decision
+1. **Sliding-Window Rate Limiting**:
+   - Heavy mutation endpoints (`/upload`, `/api/upload`, `/api/export/render`, `/api/metadata/generate`) are throttled at 20–30 requests per minute per IP.
+   - Standard read routes are allocated 60–120 requests per minute per IP to avoid hindering normal creators.
+   - Throttled requests receive `HTTP 429 Too Many Requests` with RFC 6585 compliant headers: `Retry-After`, `X-RateLimit-Limit`, and `X-RateLimit-Remaining: 0`.
+2. **PII and Credential Sanitization**:
+   - Custom `SensitiveDataFilter` in the logging pipeline scrubs Authorization tokens (`Bearer ...`), OpenAI / Google API keys (`sk-...`, `AIza...`), passwords, email addresses, and client IPv4 addresses (anonymizing the last octet: `192.168.1.xxx`).
+   - Ensures zero debug log leaks of user identity, credentials, or confidential headers.
+3. **Pipeline Telemetry & Prometheus Metrics**:
+   - `MetricsService` instruments the video processing pipeline, exporting metrics via `GET /api/metrics` (JSON) and `GET /metrics` (Prometheus text format).
+   - Tracks job durations (average, min, max), error rates percentage, active queue length, and stage durations (`audio_extract`, `stt`, `diarize`, `scene_detect`, `highlight_ranking`).
+   - **Alerting**: Automated alert counters and warnings trigger if STT fails (`metrics_service.record_stt_warning`) or if requests are throttled (`metrics_service.record_rate_limit_block`).
+4. **HTTPS Enforcement & Production Security Headers**:
+   - Security middleware attaches `Strict-Transport-Security: max-age=31536000; includeSubDomains; preload`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `X-XSS-Protection: 1; mode=block`, and a restrictive `Content-Security-Policy`.
+   - In production environments, non-HTTPS traffic is redirected via `HTTP 308 Permanent Redirect`.
+5. **Rigorous CI Coverage Guardrail**:
+   - Pytest suite configured with `--cov=app --cov-report=term-missing --cov-fail-under=80` enforcing $\ge 80\%$ test coverage on every commit.

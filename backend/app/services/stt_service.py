@@ -7,6 +7,7 @@ from scipy.io import wavfile
 from typing import List, Dict, Any, Optional
 from app.core.config import settings
 from app.core.logger import logger
+from app.services.metrics_service import metrics_service
 from app.models.schemas import SpeechSegment, WordTimestamp
 
 class STTService:
@@ -37,6 +38,7 @@ class STTService:
                 return await self._transcribe_assemblyai(wav_path)
             except Exception as e:
                 logger.warning(f"AssemblyAI transcription failed: {e}. Falling back to next engine.")
+                metrics_service.record_stt_warning(f"AssemblyAI failed: {e}")
 
         # 2. Try OpenAI Whisper API if key provided
         if self.openai_key:
@@ -45,6 +47,7 @@ class STTService:
                 return await self._transcribe_openai(wav_path)
             except Exception as e:
                 logger.warning(f"OpenAI Whisper API transcription failed: {e}. Falling back to acoustic engine.")
+                metrics_service.record_stt_warning(f"OpenAI Whisper failed: {e}")
 
         # 3. Offline Acoustic VAD and Speech Analysis Engine
         logger.info("Transcribing audio using built-in Acoustic VAD Speech Analysis Engine...")

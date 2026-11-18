@@ -8,7 +8,7 @@ on:
 
 jobs:
   backend-tests:
-    name: Backend Pytest Suite
+    name: Backend Pytest & Coverage (>=80%)
     runs-on: ubuntu-latest
 
     steps:
@@ -31,13 +31,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r backend/requirements.txt
 
-      - name: Run Pytest
+      - name: Run Pytest with Coverage Enforcement (>=80%)
         run: |
           cd backend
-          python -m pytest -v --tb=short
+          python -m pytest -v --cov=app --cov-report=term-missing --cov-fail-under=80
 
   frontend-tests:
-    name: Frontend Vitest & Build
+    name: Frontend Vitest, Lint & Build
     runs-on: ubuntu-latest
 
     steps:
@@ -55,6 +55,11 @@ jobs:
         run: |
           cd frontend
           npm ci
+
+      - name: Run ESLint
+        run: |
+          cd frontend
+          npm run lint
 
       - name: Run Vitest Unit Tests
         run: |

@@ -1,8 +1,10 @@
 import re
 import os
 import time
+import html
+import threading
 from pathlib import Path
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Optional, Any
 from app.core.config import settings
 from app.core.logger import logger
 
@@ -33,39 +35,97 @@ DANGEROUS_EXTENSIONS = {
     ".exe", ".bat", ".cmd", ".sh", ".ps1", ".vbs", ".js", ".php", ".py", ".msi", ".dll", ".scr"
 }
 
-# In-memory rate limiting tracking: ip -> [timestamps]
-_RATE_LIMIT_STORE: Dict[str, list] = {}
+# In-memory rate limiting tracking: (ip, endpoint) -> [timestamps]
+_RATE_LIMIT_STORE: Dict[Tuple[str, str], list] = {}
+_RATE_LIMIT_LOCK = threading.Lock()
 RATE_LIMIT_MAX_REQUESTS = 60
 RATE_LIMIT_WINDOW_SECONDS = 60
+
+# Heavy endpoints have strict bursting thresholds to throttle abuse
+HEAVY_ENDPOINT_THRESHOLDS = {
+    "/upload": 20,
+    "/api/upload": 20,
+    "/api/export/render": 20,
+    "/api/metadata/generate": 30,
+    "/api/ingest/upload": 20
+}
 
 def sanitize_filename(filename: str) -> str:
     """Strip unsafe path characters and ensure a safe filename."""
     clean = os.path.basename(filename)
-    # Check for null byte poisoning
+    # Check for null byte poisoning and path traversal
     clean = clean.replace("\x00", "")
+    clean = clean.replace("..", "_")
     clean = re.sub(r'[^a-zA-Z0-9_.-]', '_', clean)
     if not clean or clean.startswith('.'):
         clean = f"upload_{int(time.time())}.mp4"
     return clean
 
+def sanitize_text(text: str) -> str:
+    """
+    Sanitize text input against XSS, script injection, and dangerous URI schemes.
+    Strips script tags, javascript: links, and HTML entities.
+    """
+    if not text or not isinstance(text, str):
+        return ""
+    # Strip null bytes
+    cleaned = text.replace("\x00", "")
+    # Strip dangerous HTML tags
+    cleaned = re.sub(r'(?i)<script[^>]*>.*?</script>', '', cleaned, flags=re.DOTALL)
+    cleaned = re.sub(r'(?i)<iframe[^>]*>.*?</iframe>', '', cleaned, flags=re.DOTALL)
+    cleaned = re.sub(r'(?i)<object[^>]*>.*?</object>', '', cleaned, flags=re.DOTALL)
+    cleaned = re.sub(r'(?i)<embed[^>]*>.*?</embed>', '', cleaned, flags=re.DOTALL)
+    cleaned = re.sub(r'(?i)<style[^>]*>.*?</style>', '', cleaned, flags=re.DOTALL)
+    # Remove event handlers (onload, onerror, onclick, etc.)
+    cleaned = re.sub(r'(?i)\bon\w+\s*=', '', cleaned)
+    # Remove javascript: or data: URIs
+    cleaned = re.sub(r'(?i)javascript:', '', cleaned)
+    cleaned = re.sub(r'(?i)data:text/html', '', cleaned)
+    # Entity escape remaining HTML entities
+    escaped = html.escape(cleaned.strip())
+    return escaped
+
+def validate_export_parameters(payload: Dict[str, Any]) -> Tuple[bool, str]:
+    """Validate numeric ranges and categorical values for video render exports."""
+    # Aspect Ratio validation
+    valid_ratios = {"9:16", "1:1", "16:9", "original"}
+    aspect = payload.get("aspect_ratio", "9:16")
+    if aspect not in valid_ratios:
+        return False, f"Invalid aspect ratio '{aspect}'. Allowed: {', '.join(valid_ratios)}"
+
+    # Transition validation
+    valid_transitions = {"cut", "fade", "zoom"}
+    transition = payload.get("transition", "cut")
+    if transition not in valid_transitions:
+        return False, f"Invalid transition '{transition}'. Allowed: {', '.join(valid_transitions)}"
+
+    # Font size validation
+    font_size = payload.get("font_size", 28)
+    if not isinstance(font_size, (int, float)) or font_size < 12 or font_size > 72:
+        return False, "Font size must be between 12 and 72 pt"
+
+    # Start and End timestamps
+    start = payload.get("start", 0.0)
+    end = payload.get("end", 0.0)
+    if not isinstance(start, (int, float)) or not isinstance(end, (int, float)):
+        return False, "Start and end must be numeric timestamp values"
+    if start < 0 or end <= start:
+        return False, f"Invalid trim range: start ({start}s) must be non-negative and less than end ({end}s)"
+
+    # Crop X coordinate
+    crop_x = payload.get("crop_x")
+    if crop_x is not None:
+        if not isinstance(crop_x, (int, float)) or crop_x < 0.0 or crop_x > 1.0:
+            return False, "crop_x offset must be between 0.0 and 1.0"
+
+    return True, "Valid"
+
 def scan_file_for_malware(content: bytes, filename: str) -> Tuple[bool, str]:
     """
     Security Guardrail: Scan uploaded file bytes and filename for malware signatures.
-    
     1. Checks for disguised Windows/Linux executable headers (MZ, ELF).
     2. Checks for embedded scripts (PHP, HTML scripts, shell commands).
     3. Checks for double extension evasion techniques (e.g. .mp4.exe).
-    
-    NOTE ON ENTERPRISE PRODUCTION DEPLOYMENT:
-    In a distributed production environment, integrate ClamAV daemon (`pyclamd`)
-    or cloud-native scanners (AWS GuardDuty, Google Cloud Security Scanner, VirusTotal API):
-    ```python
-    # Example production ClamAV hook:
-    # import pyclamd
-    # cd = pyclamd.ClamdAgnostic()
-    # scan_res = cd.scan_stream(content)
-    # if scan_res: return False, f"Malware detected: {scan_res}"
-    ```
     """
     # 1. Double extension check
     name_parts = filename.lower().split('.')
@@ -98,7 +158,7 @@ def validate_magic_bytes(header: bytes) -> bool:
     # Check AVI / RIFF
     if header.startswith(b"RIFF"):
         return True
-    return True
+    return False
 
 def validate_uploaded_file(filename: str, file_size: int, content: bytes = b"") -> Tuple[bool, str]:
     """Validate filename extension, file size, container header, and malware scan."""
@@ -166,13 +226,49 @@ def check_youtube_permissions() -> Tuple[bool, str]:
 
     return True, "Authorized"
 
-def check_rate_limit(client_ip: str) -> bool:
-    """Simple sliding-window rate limiter per client IP."""
+def get_rate_limit_status(
+    client_ip: str,
+    endpoint: str = "default",
+    max_requests: Optional[int] = None,
+    window_seconds: int = RATE_LIMIT_WINDOW_SECONDS
+) -> Tuple[bool, int, int]:
+    """
+    Sliding-window rate limiter per client IP and endpoint category.
+    Returns: (is_allowed, remaining_requests, retry_after_seconds)
+    """
+    if max_requests is None:
+        max_requests = HEAVY_ENDPOINT_THRESHOLDS.get(endpoint, RATE_LIMIT_MAX_REQUESTS)
+
     now = time.time()
-    timestamps = _RATE_LIMIT_STORE.get(client_ip, [])
-    timestamps = [ts for ts in timestamps if now - ts < RATE_LIMIT_WINDOW_SECONDS]
-    if len(timestamps) >= RATE_LIMIT_MAX_REQUESTS:
-        return False
-    timestamps.append(now)
-    _RATE_LIMIT_STORE[client_ip] = timestamps
-    return True
+    key = (client_ip, endpoint)
+
+    with _RATE_LIMIT_LOCK:
+        timestamps = _RATE_LIMIT_STORE.get(key, [])
+        # Prune timestamps outside window
+        valid_timestamps = [ts for ts in timestamps if now - ts < window_seconds]
+
+        if len(valid_timestamps) >= max_requests:
+            oldest = valid_timestamps[0]
+            retry_after = max(1, int(window_seconds - (now - oldest)))
+            _RATE_LIMIT_STORE[key] = valid_timestamps
+            return False, 0, retry_after
+
+        valid_timestamps.append(now)
+        _RATE_LIMIT_STORE[key] = valid_timestamps
+        remaining = max(0, max_requests - len(valid_timestamps))
+        return True, remaining, 0
+
+def check_rate_limit(
+    client_ip: str,
+    endpoint: str = "default",
+    max_requests: Optional[int] = None,
+    window_seconds: int = RATE_LIMIT_WINDOW_SECONDS
+) -> bool:
+    """Convenience boolean check for rate limits."""
+    allowed, _, _ = get_rate_limit_status(client_ip, endpoint, max_requests, window_seconds)
+    return allowed
+
+def reset_rate_limits():
+    """Reset rate limiter store (primarily for unit testing)."""
+    with _RATE_LIMIT_LOCK:
+        _RATE_LIMIT_STORE.clear()
