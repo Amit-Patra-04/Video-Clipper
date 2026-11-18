@@ -20,17 +20,43 @@ export const apiClient = {
       formData.append('youtube_url', youtubeUrl);
     }
 
-    const res = await fetch(`${API_BASE}/upload`, {
-      method: 'POST',
-      body: formData
-    });
+    let res;
+    try {
+      res = await fetch(`${API_BASE}/upload`, {
+        method: 'POST',
+        body: formData
+      });
+    } catch {
+      const errorObj = new Error(
+        'Backend server is not reachable. Please start the FastAPI backend server on http://127.0.0.1:8000 (cd Video-Clipper/backend && python -m uvicorn app.main:app --port 8000 --reload).'
+      );
+      errorObj.isNetworkError = true;
+      throw errorObj;
+    }
+
+    // Check for Vite dev server proxy errors (502 Bad Gateway / 504 Gateway Timeout)
+    if (res.status === 502 || res.status === 504) {
+      const errorObj = new Error(
+        `Backend server is offline (HTTP ${res.status} Bad Gateway/Timeout). Please ensure the FastAPI backend is running on http://127.0.0.1:8000.`
+      );
+      errorObj.status = res.status;
+      errorObj.isNetworkError = true;
+      throw errorObj;
+    }
 
     const data = await res.json().catch(() => ({}));
 
     if (!res.ok) {
-      const errorObj = new Error(data.detail || 'Upload failed');
+      let detailMsg = 'Upload failed';
+      if (typeof data.detail === 'string') {
+        detailMsg = data.detail;
+      } else if (Array.isArray(data.detail)) {
+        detailMsg = data.detail.map(d => d.msg || JSON.stringify(d)).join(', ');
+      }
+
+      const errorObj = new Error(detailMsg);
       errorObj.status = res.status;
-      errorObj.detail = data.detail;
+      errorObj.detail = detailMsg;
       errorObj.isPolicyWarning = res.status === 403;
       throw errorObj;
     }

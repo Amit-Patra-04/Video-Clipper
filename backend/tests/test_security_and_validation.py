@@ -152,20 +152,54 @@ def test_validate_youtube_url_policy():
     assert valid is True
     assert vid == "dQw4w9WgXcQ"
 
+    # Shortened youtu.be with tracking query param
+    valid, vid, err = validate_youtube_url("https://youtu.be/dQw4w9WgXcQ?si=abcdef123456")
+    assert valid is True
+    assert vid == "dQw4w9WgXcQ"
+
+    # Watch with parameters before v
+    valid, vid, err = validate_youtube_url("https://www.youtube.com/watch?feature=shared&v=dQw4w9WgXcQ&t=10s")
+    assert valid is True
+    assert vid == "dQw4w9WgXcQ"
+
+    # Embed URL
+    valid, vid, err = validate_youtube_url("https://www.youtube.com/embed/dQw4w9WgXcQ")
+    assert valid is True
+    assert vid == "dQw4w9WgXcQ"
+
+    # Live URL
+    valid, vid, err = validate_youtube_url("https://www.youtube.com/live/dQw4w9WgXcQ")
+    assert valid is True
+    assert vid == "dQw4w9WgXcQ"
+
+    # Mobile URL without https
+    valid, vid, err = validate_youtube_url("m.youtube.com/watch?v=dQw4w9WgXcQ")
+    assert valid is True
+    assert vid == "dQw4w9WgXcQ"
+
     # Disallowed external domain
     valid, vid, err = validate_youtube_url("https://vimeo.com/123456789")
     assert valid is False
     assert "Invalid YouTube URL" in err
 
+    # Invalid ID length
+    valid, vid, err = validate_youtube_url("https://youtube.com/watch?v=short")
+    assert valid is False
+    assert "Invalid YouTube video ID length" in err
+
 
 def test_youtube_permissions_guardrail():
-    """Verify policy guardrail refuses programmatic downloads without OAuth credentials."""
+    """Verify policy guardrail refuses programmatic downloads without OAuth credentials or dev flag."""
     with patch.dict("os.environ", {}, clear=True):
         is_auth, msg = check_youtube_permissions()
         assert is_auth is False
         assert "YouTube Policy Warning" in msg
 
     with patch.dict("os.environ", {"YOUTUBE_OAUTH_TOKEN": "valid_token_xyz"}):
+        is_auth, msg = check_youtube_permissions()
+        assert is_auth is True
+
+    with patch.dict("os.environ", {"ALLOW_YOUTUBE_DOWNLOAD": "true"}):
         is_auth, msg = check_youtube_permissions()
         assert is_auth is True
 

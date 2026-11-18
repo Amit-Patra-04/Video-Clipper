@@ -340,4 +340,57 @@ class VideoPipelineWorker:
         logger.error(f"[{video_id}] Pipeline permanently failed after {max_retries} retries.")
         return False
 
+    async def execute_youtube_pipeline(
+        self,
+        video_id: str,
+        youtube_url: str,
+        title: str = "",
+        job_id: Optional[str] = None
+    ):
+        """
+        Download authorized YouTube video and then execute the full processing pipeline.
+        """
+        from app.services.ingestion_service import ingestion_service
+        try:
+            logger.info(f"[{video_id}] Starting YouTube download for {youtube_url}")
+            if job_id:
+                db_update_job(
+                    job_id,
+                    status="processing",
+                    current_stage="Downloading YouTube Video",
+                    progress=5,
+                    message="Downloading authorized YouTube stream..."
+                )
+
+            download_result = ingestion_service.handle_youtube_download(youtube_url)
+            dest_path = download_result["file_path"]
+            actual_title = download_result.get("title") or title or f"YouTube {video_id}"
+
+            if job_id:
+                db_update_job(
+                    job_id,
+                    file_path=dest_path,
+                    current_stage="Downloaded",
+                    progress=15,
+                    message=f"Downloaded '{actual_title}'. Enqueueing analysis pipeline..."
+                )
+
+            await self.execute_pipeline(
+                video_id=video_id,
+                video_path=dest_path,
+                title=actual_title,
+                job_id=job_id
+            )
+        except Exception as e:
+            err_msg = str(e)
+            logger.error(f"[{video_id}] YouTube ingestion failed: {err_msg}")
+            if job_id:
+                db_update_job(
+                    job_id,
+                    status="failed",
+                    current_stage="Failed",
+                    error=err_msg,
+                    message=f"YouTube ingestion failed: {err_msg[:200]}"
+                )
+
 pipeline_worker = VideoPipelineWorker()

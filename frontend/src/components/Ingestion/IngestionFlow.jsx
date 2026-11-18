@@ -19,6 +19,7 @@ export default function IngestionFlow({ onSuccess, onDemoLoad }) {
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
+  const [errorTitle, setErrorTitle] = useState('Validation Error');
   const [policyWarning, setPolicyWarning] = useState(null);
   const [jobResponse, setJobResponse] = useState(null);
   const [dragActive, setDragActive] = useState(false);
@@ -27,6 +28,7 @@ export default function IngestionFlow({ onSuccess, onDemoLoad }) {
   // File validation
   const validateAndSelect = file => {
     setErrorMessage(null);
+    setErrorTitle('Validation Error');
     setPolicyWarning(null);
     setJobResponse(null);
 
@@ -34,11 +36,13 @@ export default function IngestionFlow({ onSuccess, onDemoLoad }) {
 
     const allowedExtensions = /\.(mp4|mov|webm|mkv)$/i;
     if (!allowedExtensions.test(file.name)) {
+      setErrorTitle('Unsupported File Format');
       setErrorMessage('Please select a valid video file (.mp4, .mov, .webm, .mkv).');
       return;
     }
 
     if (file.size > 500 * 1024 * 1024) {
+      setErrorTitle('File Size Exceeded');
       setErrorMessage('File size exceeds the 500 MB limit.');
       return;
     }
@@ -69,6 +73,7 @@ export default function IngestionFlow({ onSuccess, onDemoLoad }) {
   const handleSubmit = async e => {
     e.preventDefault();
     setErrorMessage(null);
+    setErrorTitle('Validation Error');
     setPolicyWarning(null);
     setJobResponse(null);
     setIsSubmitting(true);
@@ -76,6 +81,7 @@ export default function IngestionFlow({ onSuccess, onDemoLoad }) {
     try {
       if (activeTab === 'upload') {
         if (!selectedFile) {
+          setErrorTitle('File Required');
           setErrorMessage('Please choose a video file first.');
           setIsSubmitting(false);
           return;
@@ -88,6 +94,7 @@ export default function IngestionFlow({ onSuccess, onDemoLoad }) {
         }
       } else {
         if (!youtubeUrl.trim()) {
+          setErrorTitle('URL Required');
           setErrorMessage('Please enter a YouTube video URL.');
           setIsSubmitting(false);
           return;
@@ -95,7 +102,8 @@ export default function IngestionFlow({ onSuccess, onDemoLoad }) {
 
         const isYoutubeFormat = /(youtube\.com|youtu\.be)/i.test(youtubeUrl);
         if (!isYoutubeFormat) {
-          setErrorMessage('Invalid URL format. Please provide a youtube.com or youtu.be link.');
+          setErrorTitle('Invalid YouTube URL');
+          setErrorMessage('Invalid URL format. Please provide a youtube.com or youtu.be link (e.g. https://www.youtube.com/watch?v=... or https://youtu.be/...).');
           setIsSubmitting(false);
           return;
         }
@@ -113,7 +121,14 @@ export default function IngestionFlow({ onSuccess, onDemoLoad }) {
           err.detail ||
             'YouTube Policy Warning: Automated downloading is disallowed without OAuth authorization.'
         );
+      } else if (err.isNetworkError || err.status === 502 || err.status === 504) {
+        setErrorTitle('Backend Server Offline');
+        setErrorMessage(
+          err.message ||
+            'Backend server is not reachable on http://127.0.0.1:8000. Please start the backend with: cd Video-Clipper/backend && python -m uvicorn app.main:app --port 8000 --reload'
+        );
       } else {
+        setErrorTitle('Submission Error');
         setErrorMessage(err.detail || err.message || 'Submission failed. Please check inputs.');
       }
     } finally {
@@ -264,11 +279,11 @@ export default function IngestionFlow({ onSuccess, onDemoLoad }) {
 
         {/* Error Feedback */}
         {errorMessage && (
-          <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-300 flex items-start gap-2.5">
+          <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-300 flex items-start gap-2.5 animate-in fade-in duration-200">
             <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <p className="font-bold">Validation Error</p>
-              <p className="mt-0.5 text-rose-400/90">{errorMessage}</p>
+            <div className="flex-1 space-y-1">
+              <p className="font-bold text-rose-300">{errorTitle}</p>
+              <p className="text-rose-400/90 leading-relaxed font-mono text-[11px] whitespace-pre-wrap break-words">{errorMessage}</p>
             </div>
           </div>
         )}

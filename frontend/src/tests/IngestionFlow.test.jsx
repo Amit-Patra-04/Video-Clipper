@@ -73,4 +73,45 @@ describe('IngestionFlow Component', () => {
       screen.getByText(/YouTube Policy Warning: Direct programmatic downloading is disallowed/i)
     ).toBeInTheDocument();
   });
+
+  it('displays clear Backend Server Offline banner when backend port is unreachable', async () => {
+    const netErr = new Error('Backend server is offline (HTTP 504 Bad Gateway/Timeout).');
+    netErr.status = 504;
+    netErr.isNetworkError = true;
+
+    vi.spyOn(apiClient, 'uploadToEndpoint').mockRejectedValueOnce(netErr);
+
+    render(<IngestionFlow onDemoLoad={vi.fn()} />);
+
+    const ytTabBtn = screen.getByText(/\(b\) YouTube URL Input/i);
+    fireEvent.click(ytTabBtn);
+
+    const input = screen.getByPlaceholderText(/https:\/\/www\.youtube\.com/i);
+    fireEvent.change(input, { target: { value: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' } });
+
+    const submitBtn = screen.getByRole('button', { name: /Submit to Ingestion Pipeline/i });
+    await act(async () => {
+      fireEvent.click(submitBtn);
+    });
+
+    expect(screen.getByText('Backend Server Offline')).toBeInTheDocument();
+    expect(screen.getByText(/Backend server is offline/i)).toBeInTheDocument();
+  });
+
+  it('validates non-YouTube URLs before submitting', async () => {
+    render(<IngestionFlow onDemoLoad={vi.fn()} />);
+
+    const ytTabBtn = screen.getByText(/\(b\) YouTube URL Input/i);
+    fireEvent.click(ytTabBtn);
+
+    const input = screen.getByPlaceholderText(/https:\/\/www\.youtube\.com/i);
+    fireEvent.change(input, { target: { value: 'https://vimeo.com/123456789' } });
+
+    const submitBtn = screen.getByRole('button', { name: /Submit to Ingestion Pipeline/i });
+    await act(async () => {
+      fireEvent.click(submitBtn);
+    });
+
+    expect(screen.getByText('Invalid YouTube URL')).toBeInTheDocument();
+  });
 });

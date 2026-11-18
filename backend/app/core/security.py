@@ -3,6 +3,7 @@ import os
 import time
 import html
 import threading
+import urllib.parse
 from pathlib import Path
 from typing import Dict, Tuple, Optional, Any
 from app.core.config import settings
@@ -186,24 +187,75 @@ def validate_uploaded_file(filename: str, file_size: int, content: bytes = b"") 
 def validate_youtube_url(url: str) -> Tuple[bool, str, str]:
     """
     Validate that the URL belongs strictly to authorized YouTube endpoints
-    and extract the video ID. Returns (is_valid, video_id, error_message).
+    and extract the 11-character video ID. Returns (is_valid, video_id, error_message).
+    Supports:
+    - https://www.youtube.com/watch?v=... (with any query parameters before/after v)
+    - https://youtu.be/... (shortened link, with or without query params)
+    - https://www.youtube.com/shorts/...
+    - https://www.youtube.com/embed/...
+    - https://www.youtube.com/live/...
+    - Mobile (m.youtube.com) and music (music.youtube.com) endpoints
     """
     if not url or not isinstance(url, str):
         return False, "", "URL cannot be empty."
 
     url = url.strip()
     
-    # Strictly allow YouTube domains
-    pattern = r'^(https?://)?(www\.|m\.)?(youtube\.com/watch\?v=|youtu\.be/|youtube\.com/shorts/)([a-zA-Z0-9_-]{11})'
-    match = re.match(pattern, url)
+    # Prepend scheme if missing (e.g., youtube.com/watch?v=...)
+    if not (url.startswith("http://") or url.startswith("https://")):
+        url = "https://" + url
+
+    try:
+        parsed = urllib.parse.urlparse(url)
+    except Exception:
+        return False, "", "Invalid URL format."
+
+    hostname = (parsed.hostname or "").lower()
     
-    if not match:
+    # Strictly allow official YouTube domains
+    allowed_domains = {
+        "youtube.com",
+        "www.youtube.com",
+        "m.youtube.com",
+        "music.youtube.com",
+        "youtu.be",
+        "www.youtu.be"
+    }
+
+    if not any(hostname == d or hostname.endswith("." + d) for d in allowed_domains):
         return False, "", "Invalid YouTube URL. Please provide a standard watch or shorts link (e.g., https://youtube.com/watch?v=... or https://youtu.be/...)."
-        
-    video_id = match.group(4)
-    if len(video_id) != 11:
+
+    video_id = ""
+
+    # Case 1: youtu.be/<video_id>
+    if "youtu.be" in hostname:
+        path_parts = [p for p in parsed.path.split("/") if p]
+        if path_parts:
+            video_id = path_parts[0]
+
+    # Case 2: youtube.com/watch?v=<video_id> (v can be anywhere in query params)
+    elif parsed.path == "/watch" or parsed.path.startswith("/watch"):
+        qs = urllib.parse.parse_qs(parsed.query)
+        v_list = qs.get("v")
+        if v_list and len(v_list) > 0:
+            video_id = v_list[0]
+
+    # Case 3: /shorts/<video_id>, /embed/<video_id>, /live/<video_id>
+    elif any(parsed.path.startswith(prefix) for prefix in ("/shorts/", "/embed/", "/live/")):
+        path_parts = [p for p in parsed.path.split("/") if p]
+        if len(path_parts) >= 2:
+            video_id = path_parts[1]
+
+    # Fallback regex in case of non-standard path variations on youtube.com
+    if not video_id:
+        match = re.search(r'(?:v=|\/shorts\/|\/embed\/|\/live\/|youtu\.be\/)([a-zA-Z0-9_-]{11})', url)
+        if match:
+            video_id = match.group(1)
+
+    # Validate extracted video_id (strictly 11 chars alphanumeric, dash, or underscore)
+    if not video_id or not re.match(r'^[a-zA-Z0-9_-]{11}$', video_id):
         return False, "", "Invalid YouTube video ID length."
-        
+
     return True, video_id, ""
 
 def check_youtube_permissions() -> Tuple[bool, str]:
@@ -212,11 +264,13 @@ def check_youtube_permissions() -> Tuple[bool, str]:
     Per YouTube Terms of Service and API Policy:
     Do NOT attempt to programmatically download third-party YouTube videos.
     Only authorized user-owned content via official YouTube Data API OAuth2 is allowed.
+    In local development, set ALLOW_YOUTUBE_DOWNLOAD=true to enable downloading user-authorized content.
     """
     oauth_token = os.getenv("YOUTUBE_OAUTH_TOKEN", "")
     api_key = os.getenv("YOUTUBE_API_KEY", "")
+    allow_dev = os.getenv("ALLOW_YOUTUBE_DOWNLOAD", "").lower() in ("true", "1", "yes")
 
-    if not oauth_token and not api_key:
+    if not oauth_token and not api_key and not allow_dev:
         policy_warning = (
             "YouTube Policy Warning: Direct programmatic downloading of YouTube videos without "
             "authorized OAuth2 credentials is disallowed by YouTube Terms of Service. "

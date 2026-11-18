@@ -75,6 +75,26 @@ def test_youtube_invalid_url_rejected():
     assert response.status_code == 400
     assert "Invalid YouTube URL" in response.json()["detail"]
 
+def test_youtube_url_authorized_queues_job(monkeypatch):
+    """Verify authorized YouTube links enqueue background job successfully."""
+    monkeypatch.setenv("ALLOW_YOUTUBE_DOWNLOAD", "true")
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr("app.worker.pipeline_worker.execute_youtube_pipeline", lambda *args, **kwargs: None)
+        response = client.post(
+            "/api/upload",
+            data={"youtube_url": "https://www.youtube.com/watch?feature=shared&v=dQw4w9WgXcQ&t=10s"}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert "job_id" in data
+        assert data["status"] == "queued"
+        assert data["type"] == "youtube_url"
+        assert "Authorized YouTube job queued" in data["message"]
+        
+        job = db_get_job(data["job_id"])
+        assert job is not None
+        assert job.job_type == "youtube_url"
+
 def test_malware_scan_rejects_executable():
     """Security Guardrail: Scan uploads for malware headers (e.g. Windows PE executable disguised as mp4)."""
     fake_exe = b"MZ\x90\x00\x03\x00\x00\x00" + b"\x00" * 500

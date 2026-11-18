@@ -163,7 +163,7 @@ async def upload_video_or_youtube(
                 detail=policy_msg
             )
 
-        # If authorized via official OAuth2 credentials:
+        # If authorized via official OAuth2 credentials or development mode:
         video_id = f"yt_{yt_id}_{uuid.uuid4().hex[:6]}"
         job = db_create_job(
             video_id=video_id,
@@ -171,6 +171,15 @@ async def upload_video_or_youtube(
             source=clean_url,
             status="queued",
             message="Authorized YouTube job queued for ingestion"
+        )
+
+        # Trigger background pipeline to download and analyze video
+        background_tasks.add_task(
+            pipeline_worker.execute_youtube_pipeline,
+            video_id=video_id,
+            youtube_url=clean_url,
+            title=f"YouTube_{yt_id}",
+            job_id=job.id
         )
 
         return UploadJobResponse(
