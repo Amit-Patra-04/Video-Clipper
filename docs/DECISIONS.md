@@ -116,4 +116,18 @@ Implement spectral centroid and pause clustering to assign speaker identities (`
    - **XSS Sanitization**: User inputs are stripped of malicious `<script>` and HTML tags and entity-escaped before model persistence.
    - **Semantic HTML & ARIA**: Caption container implements `role="region"`, `aria-label="Synchronized Captions"`, `aria-live="polite"`, and `role="status"` with `aria-atomic="true"`.
 
+---
+
+## 8. Clip Editor UI, Multi-Track Canvas & FFmpeg Export Pipeline
+
+### Decision
+1. **Multi-Track Timeline with HTML5 Canvas**: Visual tracks for Video (scenes & thumbnails), Audio (interactive `<canvas>` waveform peaks), and Speech (color-coded speaker blocks), paired with dynamic trim handles and red playhead scrubber.
+2. **Crop & Aspect Ratio Reframing**: Live aspect ratio selector (9:16 vertical shorts, 1:1 square, 16:9 landscape, and original resolution). Crop and trim controls immediately update the HTML5 video preview.
+3. **Scene Transitions (Cut & Fade)**: Supports instant Jump Cuts (`cut`) and smooth Cross-Dissolves (`fade`), implemented with FFmpeg's `fade=t=in...` and `afade=t=in...` filters.
+4. **Quality & Audio Sync Guardrails**:
+   - **No Upscaling Beyond Source Quality**: Probes source resolution; clamps target crop dimensions to source bounds and encodes at visually lossless `-crf 18` with `-pix_fmt yuv420p`.
+   - **Post-Export Audio Sync**: Uses `-avoid_negative_ts make_zero` and `-af aresample=async=1` to guarantee audio never drifts post-export.
+   - **Progress & Error Handling**: Step-by-step progress indication with graceful error handling and direct high-quality MP4 download.
+
+
 

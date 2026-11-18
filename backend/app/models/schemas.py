@@ -117,13 +117,15 @@ class ExportRequest(BaseModel):
     clip_id: Optional[str] = None
     start: float
     end: float
-    aspect_ratio: str = "9:16" # "9:16", "1:1", "16:9"
+    aspect_ratio: str = "9:16" # "9:16", "1:1", "16:9", "original"
+    transition: str = "cut" # "cut", "fade", "zoom"
     burn_captions: bool = True
     caption_preset: str = "hormozi" # "hormozi", "mrbeast", "minimal", "neon"
     font_size: int = 28
     active_color: str = "#facc15" # Yellow
     crop_x: Optional[float] = None # Horizontal crop center offset (0.0 to 1.0)
     audio_normalize: bool = True
+    original_resolution: bool = False
 
 class ExportResponse(BaseModel):
     export_id: str
@@ -132,4 +134,5 @@ class ExportResponse(BaseModel):
     file_name: str
     file_size_bytes: int
     duration: float
+    resolution: Optional[str] = None
     status: str = "completed"

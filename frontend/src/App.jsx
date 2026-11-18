@@ -40,6 +40,7 @@ export default function App() {
   const [trimStart, setTrimStart] = useState(0);
   const [trimEnd, setTrimEnd] = useState(30);
   const [aspectRatio, setAspectRatio] = useState('9:16');
+  const [transition, setTransition] = useState('cut'); // 'cut' | 'fade' | 'zoom'
   const [activeTab, setActiveTab] = useState('highlights'); // 'highlights' | 'captions' | 'metadata' | 'transitions'
 
   // Kinetic Caption Config
@@ -535,7 +536,7 @@ export default function App() {
                   )}
 
                   {activeTab === 'transitions' && (
-                    <TransitionPicker selected="fade" onSelect={() => {}} />
+                    <TransitionPicker selected={transition} onSelect={setTransition} />
                   )}
                 </div>
               </div>
@@ -554,6 +555,7 @@ export default function App() {
                 }}
                 onSeek={time => setCurrentTime(time)}
                 segments={segments}
+                transition={transition}
               />
             </div>
           </div>
@@ -569,6 +571,7 @@ export default function App() {
         trimStart={trimStart}
         trimEnd={trimEnd}
         aspectRatio={aspectRatio}
+        transition={transition}
         captionConfig={captionConfig}
       />
 

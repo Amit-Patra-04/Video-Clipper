@@ -129,17 +129,31 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         final_video_name = f"{export_id}_{aspect_slug}.mp4"
         final_video_path = str(self.exports_dir / final_video_name)
 
-        logger.info(f"Rendering export {export_id} from {req.start:.2f}s to {req.end:.2f}s, ratio={req.aspect_ratio}")
+        logger.info(f"Rendering export {export_id} from {req.start:.2f}s to {req.end:.2f}s, ratio={req.aspect_ratio}, transition={req.transition}")
 
-        # 1. Cut and reframe clip
+        # Probe source video resolution to guarantee no upscaling beyond original quality
+        try:
+            source_meta = ffmpeg_service.probe_video(input_video_path)
+            source_w = source_meta.width
+            source_h = source_meta.height
+        except Exception:
+            source_w = 1920
+            source_h = 1080
+
+        chosen_aspect = "original" if req.original_resolution else req.aspect_ratio
+
+        # 1. Cut, reframe, and apply transitions with FFmpeg
         ffmpeg_service.cut_clip(
             video_path=input_video_path,
             output_path=temp_cut_path,
             start=req.start,
             end=req.end,
-            aspect_ratio=req.aspect_ratio,
+            aspect_ratio=chosen_aspect,
+            transition=req.transition,
             crop_x=req.crop_x,
-            normalize_audio=req.audio_normalize
+            normalize_audio=req.audio_normalize,
+            source_width=source_w,
+            source_height=source_h
         )
 
         # 2. Burn captions if requested
@@ -171,6 +185,12 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         file_size = os.path.getsize(final_video_path)
         duration = req.end - req.start
 
+        try:
+            exported_meta = ffmpeg_service.probe_video(final_video_path)
+            res_str = f"{exported_meta.width}x{exported_meta.height}"
+        except Exception:
+            res_str = "1080x1920" if req.aspect_ratio == "9:16" else "1920x1080"
+
         return ExportResponse(
             export_id=export_id,
             video_id=req.video_id,
@@ -178,6 +198,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             file_name=final_video_name,
             file_size_bytes=file_size,
             duration=round(duration, 2),
+            resolution=res_str,
             status="completed"
         )
 

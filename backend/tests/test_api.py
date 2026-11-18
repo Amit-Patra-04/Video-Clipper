@@ -1,3 +1,4 @@
+import os
 import io
 import pytest
 from fastapi.testclient import TestClient
@@ -53,3 +54,48 @@ def test_metadata_generate_endpoint():
     data = response.json()
     assert len(data["titles"]) > 0
     assert "description" in data
+
+def test_export_render_and_download_flow(sample_video):
+    """
+    Acceptance Criteria:
+    - Exported video reflects edits (tested on sample clip).
+    - Final video download link works.
+    - Transitions & crop applied without error.
+    """
+    video_id = "vid_export_flow_test"
+    pipeline_worker.metadata_store[video_id] = VideoMetadata(
+        video_id=video_id,
+        filename="sample.mp4",
+        file_path=sample_video,
+        duration=4.0,
+        width=640,
+        height=360,
+        fps=30.0,
+        format_name="mp4",
+        size_bytes=os.path.getsize(sample_video)
+    )
+
+    export_payload = {
+        "video_id": video_id,
+        "start": 0.5,
+        "end": 2.5,
+        "aspect_ratio": "9:16",
+        "transition": "fade",
+        "burn_captions": False,
+        "audio_normalize": True
+    }
+
+    render_resp = client.post("/api/export/render", json=export_payload)
+    assert render_resp.status_code == 200
+    render_data = render_resp.json()
+    assert render_data["status"] == "completed"
+    assert render_data["duration"] == 2.0
+    assert render_data["download_url"].startswith("/api/export/")
+
+    export_id = render_data["export_id"]
+
+    # Test download endpoint
+    dl_resp = client.get(f"/api/export/{export_id}/download")
+    assert dl_resp.status_code == 200
+    assert dl_resp.headers["content-type"] == "video/mp4"
+    assert len(dl_resp.content) > 1000

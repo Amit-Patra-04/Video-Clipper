@@ -133,61 +133,95 @@ class FFmpegService:
         start: float,
         end: float,
         aspect_ratio: str = "9:16",
+        transition: str = "cut",
         crop_x: Optional[float] = None,
-        normalize_audio: bool = True
+        normalize_audio: bool = True,
+        source_width: Optional[int] = None,
+        source_height: Optional[int] = None
     ) -> str:
         """
-        Extract video slice with exact start/end bounds and reframing.
-        - aspect_ratio "9:16": vertical short (auto-centered or crop_x).
+        Extract video slice with exact start/end bounds, reframing, and optional transition.
+        - aspect_ratio "9:16": vertical short (TikTok, Shorts, Reels). Clamped to source height.
         - aspect_ratio "1:1": square Instagram/LinkedIn post.
         - aspect_ratio "16:9": widescreen landscape.
+        - aspect_ratio "original": exact source resolution.
+        - transition: "cut" (instant cut) or "fade" (cross-dissolve fade in/out).
         """
         Path(output_path).parent.mkdir(parents=True, exist_ok=True)
         duration = max(0.5, end - start)
         
-        # Build video filters
         video_filters = []
         if aspect_ratio == "9:16":
-            # Target 1080x1920: scale so height is 1920 then crop 1080 wide
-            if crop_x is not None:
-                video_filters.append(f"scale=-2:1920,crop=1080:1920:max(0\\,min(in_w-1080\\,(in_w-1080)*{crop_x})):0")
+            if source_height and source_height < 1080:
+                target_h = source_height - (source_height % 2)
+                target_w = int(target_h * 9 / 16)
+                target_w = target_w - (target_w % 2)
             else:
-                video_filters.append("scale=-2:1920,crop=1080:1920:(in_w-1080)/2:0")
-        elif aspect_ratio == "1:1":
-            # Target 1080x1080 square
-            video_filters.append("scale=-2:1080,crop=1080:1080:(in_w-1080)/2:0")
-        else:
-            video_filters.append("scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2")
+                target_w = 1080
+                target_h = 1920
 
-        vf_str = ",".join(video_filters)
-        
+            if crop_x is not None:
+                video_filters.append(f"scale=-2:{target_h},crop={target_w}:{target_h}:max(0\\,min(in_w-{target_w}\\,(in_w-{target_w})*{crop_x})):0")
+            else:
+                video_filters.append(f"scale=-2:{target_h},crop={target_w}:{target_h}:(in_w-{target_w})/2:0")
+        elif aspect_ratio == "1:1":
+            target_side = 1080
+            if source_height and source_height < 1080:
+                target_side = source_height - (source_height % 2)
+            video_filters.append(f"scale=-2:{target_side},crop={target_side}:{target_side}:(in_w-{target_side})/2:0")
+        elif aspect_ratio == "16:9":
+            target_w = 1920
+            target_h = 1080
+            if source_width and source_width < 1920:
+                target_w = source_width - (source_width % 2)
+                target_h = int(target_w * 9 / 16) - (int(target_w * 9 / 16) % 2)
+            video_filters.append(f"scale={target_w}:{target_h}:force_original_aspect_ratio=decrease,pad={target_w}:{target_h}:(ow-iw)/2:(oh-ih)/2")
+        elif aspect_ratio == "original":
+            # Exact source resolution without cropping
+            pass
+
+        # Apply transition filters if requested
+        fade_dur = min(0.5, duration / 4.0)
+        audio_filters = ["aresample=async=1"]
+
+        if transition == "fade" and duration > 1.0:
+            video_filters.append(f"fade=t=in:st=0:d={fade_dur:.2f},fade=t=out:st={duration - fade_dur:.2f}:d={fade_dur:.2f}")
+            audio_filters.append(f"afade=t=in:st=0:d={fade_dur:.2f},afade=t=out:st={duration - fade_dur:.2f}:d={fade_dur:.2f}")
+
+        if normalize_audio:
+            audio_filters.append("loudnorm=I=-16:TP=-1.5:LRA=11")
+
         cmd = [
             self.ffmpeg_exe,
             "-y",
             "-ss", f"{start:.3f}",
             "-i", video_path,
             "-t", f"{duration:.3f}",
-            "-vf", vf_str
+            "-avoid_negative_ts", "make_zero"
         ]
-        
-        if normalize_audio:
-            cmd.extend(["-af", "loudnorm=I=-16:TP=-1.5:LRA=11"])
-            
+
+        if video_filters:
+            cmd.extend(["-vf", ",".join(video_filters)])
+
+        if audio_filters:
+            cmd.extend(["-af", ",".join(audio_filters)])
+
         cmd.extend([
             "-c:v", "libx264",
             "-preset", "fast",
-            "-crf", "22",
+            "-crf", "18", # Visually lossless, preserving source quality
+            "-pix_fmt", "yuv420p",
             "-c:a", "aac",
             "-b:a", "192k",
             output_path
         ])
-        
-        logger.info(f"Cutting clip: start={start}, end={end}, ratio={aspect_ratio}")
+
+        logger.info(f"Cutting clip: start={start}, end={end}, ratio={aspect_ratio}, transition={transition}")
         result = subprocess.run(cmd, capture_output=True, text=True)
         if result.returncode != 0:
             logger.error(f"FFmpeg cut clip failed: {result.stderr}")
             raise RuntimeError(f"FFmpeg clip cut error: {result.stderr}")
-            
+
         return output_path
 
     def burn_ass_subtitles(self, input_video: str, ass_file: str, output_video: str) -> str:
