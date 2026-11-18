@@ -45,8 +45,12 @@ export default function App() {
   // Kinetic Caption Config
   const [captionConfig, setCaptionConfig] = useState({
     preset: 'hormozi',
-    fontSize: 26,
+    fontFamily: 'font-sans',
+    fontSize: 28,
+    fontSizeClass: 'text-2xl',
+    textColorClass: 'text-yellow-400',
     activeColor: '#facc15',
+    bgColorClass: '',
     position: 'bottom'
   });
 
@@ -346,6 +350,17 @@ export default function App() {
     setMetadataSuite(null);
   };
 
+  const handleUpdateSegment = (updatedSeg) => {
+    setSegments(prevSegments =>
+      prevSegments.map(s => (s.id === updatedSeg.id ? { ...s, ...updatedSeg } : s))
+    );
+    if (videoId && !videoId.startsWith('demo_')) {
+      apiClient.updateCaptions(videoId, [updatedSeg]).catch(err => {
+        console.warn('Could not sync caption edit to backend:', err);
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
       <Header currentStage={stage} onReset={handleReset} />
@@ -433,6 +448,7 @@ export default function App() {
                   trimStart={trimStart}
                   trimEnd={trimEnd}
                   segments={segments}
+                  onUpdateSegment={handleUpdateSegment}
                   captionConfig={captionConfig}
                   aspectRatio={aspectRatio}
                 />
@@ -502,7 +518,12 @@ export default function App() {
                   )}
 
                   {activeTab === 'captions' && (
-                    <CaptionCustomizer config={captionConfig} onChange={setCaptionConfig} />
+                    <CaptionCustomizer
+                      config={captionConfig}
+                      onChange={setCaptionConfig}
+                      segments={segments}
+                      onUpdateSegment={handleUpdateSegment}
+                    />
                   )}
 
                   {activeTab === 'metadata' && (

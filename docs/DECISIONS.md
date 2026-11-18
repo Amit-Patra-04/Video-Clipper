@@ -103,3 +103,17 @@ Implement spectral centroid and pause clustering to assign speaker identities (`
 - AssemblyAI's native diarization provides speaker recognition out-of-the-box, paired with Whisper for word timestamps.
 - Worker retries with exponential backoff protect against transient file locks and intermittent network timeouts on external API calls.
 
+---
+
+## 7. Captioning System, WebVTT Generation & Real-Time Styling
+
+### Decision
+1. **Time-Coded WebVTT Export**: Provide RFC 8216 compliant WebVTT generation with standardized timecodes (`HH:MM:SS.mmm --> HH:MM:SS.mmm`) both client-side and server-side (`GET /api/clips/{video_id}/vtt`).
+2. **Interactive Live Overlay & GSAP Animations**: Show captions directly on HTML5 video previews using positioned layers with entry animations (`gsap.fromTo`) and kinetic word pop-ins.
+3. **Double-Click Inline Editing & Timing Dragging**: Users can double-click caption text directly on the video player or edit in the inspector list, with full timing adjustment (start/end seconds).
+4. **Tailwind Class Styling**: Fonts, sizes, and colors are selected using Tailwind CSS utility classes and update the live video preview in real time.
+5. **Security & Accessibility Guardrails**:
+   - **XSS Sanitization**: User inputs are stripped of malicious `<script>` and HTML tags and entity-escaped before model persistence.
+   - **Semantic HTML & ARIA**: Caption container implements `role="region"`, `aria-label="Synchronized Captions"`, `aria-live="polite"`, and `role="status"` with `aria-atomic="true"`.
+
+

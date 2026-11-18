@@ -9,10 +9,15 @@ export default function VideoPlayer({
   trimStart = 0,
   trimEnd = 60,
   segments = [],
+  onUpdateSegment,
   captionConfig = {
     preset: 'hormozi',
+    fontFamily: 'font-sans',
     fontSize: 26,
+    fontSizeClass: 'text-2xl',
+    textColorClass: 'text-yellow-400',
     activeColor: '#facc15',
+    bgColorClass: '',
     position: 'bottom'
   },
   aspectRatio = '9:16'
@@ -111,9 +116,14 @@ export default function VideoPlayer({
         <KineticCaptions
           currentTime={currentTime}
           segments={segments}
+          onUpdateSegment={onUpdateSegment}
           preset={captionConfig.preset}
+          fontFamily={captionConfig.fontFamily}
           fontSize={captionConfig.fontSize}
+          fontSizeClass={captionConfig.fontSizeClass}
+          textColorClass={captionConfig.textColorClass}
           activeColor={captionConfig.activeColor}
+          bgColorClass={captionConfig.bgColorClass}
           position={captionConfig.position}
         />
 

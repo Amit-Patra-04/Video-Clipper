@@ -82,6 +82,20 @@ export const apiClient = {
     return res.json();
   },
 
+  async updateCaptions(videoId, segments) {
+    const res = await fetch(`${API_BASE}/clips/${videoId}/captions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(segments)
+    });
+    if (!res.ok) throw new Error('Failed to update captions');
+    return res.json();
+  },
+
+  async getVTTUrl(videoId) {
+    return `${API_BASE}/clips/${videoId}/vtt`;
+  },
+
   async getVideoMetadata(videoId) {
     const res = await fetch(`${API_BASE}/clips/${videoId}/metadata`);
     if (!res.ok) throw new Error('Failed to fetch video metadata');
