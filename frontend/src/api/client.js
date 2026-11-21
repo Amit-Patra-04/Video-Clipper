@@ -11,13 +11,16 @@ export const apiClient = {
    * Unified Ingestion Endpoint: POST /api/upload (or /upload)
    * Handles (a) Video file upload or (b) YouTube URL input
    */
-  async uploadToEndpoint(file = null, youtubeUrl = null) {
+  async uploadToEndpoint(file = null, youtubeUrl = null, allowDirectDownload = false) {
     const formData = new FormData();
     if (file) {
       formData.append('file', file);
     }
     if (youtubeUrl) {
       formData.append('youtube_url', youtubeUrl);
+    }
+    if (allowDirectDownload) {
+      formData.append('allow_direct_download', 'true');
     }
 
     let res;

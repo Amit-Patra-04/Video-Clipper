@@ -115,3 +115,20 @@ def test_reject_double_extension():
     assert response.status_code == 400
     assert "suspicious" in response.json()["detail"].lower()
     assert ".exe" in response.json()["detail"].lower()
+
+def test_youtube_url_with_allow_direct_download_bypasses_and_queues():
+    """Verify that when allow_direct_download=True is provided, the job is queued without policy restriction."""
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr("app.worker.pipeline_worker.execute_youtube_pipeline", lambda *args, **kwargs: None)
+        response = client.post(
+            "/api/upload",
+            data={
+                "youtube_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                "allow_direct_download": "true"
+            }
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert "job_id" in data
+        assert data["status"] == "queued"
+        assert data["type"] == "youtube_url"

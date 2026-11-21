@@ -114,4 +114,53 @@ describe('IngestionFlow Component', () => {
 
     expect(screen.getByText('Invalid YouTube URL')).toBeInTheDocument();
   });
+
+  it('allows user to bypass policy warning and trigger direct download with yt-dlp', async () => {
+    const policyErr = new Error(
+      'YouTube Policy Warning: Direct programmatic downloading is disallowed.'
+    );
+    policyErr.status = 403;
+    policyErr.isPolicyWarning = true;
+    policyErr.detail = 'YouTube Policy Warning: Direct programmatic downloading is disallowed.';
+
+    vi.spyOn(apiClient, 'uploadToEndpoint')
+      .mockRejectedValueOnce(policyErr)
+      .mockResolvedValueOnce({
+        job_id: 'job_ytdlp_123',
+        video_id: 'yt_dQw4w9WgXcQ',
+        status: 'queued',
+        type: 'youtube_url',
+        filename: 'youtube_dQw4w9WgXcQ.mp4',
+        message: 'Authorized YouTube job queued for processing'
+      });
+
+    const onSuccess = vi.fn();
+    render(<IngestionFlow onSuccess={onSuccess} onDemoLoad={vi.fn()} />);
+
+    const ytTabBtn = screen.getByText(/\(b\) YouTube URL Input/i);
+    fireEvent.click(ytTabBtn);
+
+    const input = screen.getByPlaceholderText(/https:\/\/www\.youtube\.com/i);
+    fireEvent.change(input, { target: { value: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' } });
+
+    const submitBtn = screen.getByRole('button', { name: /Submit to Ingestion Pipeline/i });
+    await act(async () => {
+      fireEvent.click(submitBtn);
+    });
+
+    expect(screen.getByText(/Policy Restriction Warning/i)).toBeInTheDocument();
+
+    const bypassBtn = screen.getByRole('button', { name: /Download directly with yt-dlp/i });
+    await act(async () => {
+      fireEvent.click(bypassBtn);
+    });
+
+    expect(apiClient.uploadToEndpoint).toHaveBeenCalledWith(
+      null,
+      'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      true
+    );
+    expect(screen.getByText(/job_ytdlp_123/i)).toBeInTheDocument();
+    expect(onSuccess).toHaveBeenCalled();
+  });
 });

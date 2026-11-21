@@ -9,7 +9,8 @@ import {
   ArrowRight,
   ShieldCheck,
   FileCheck,
-  PlayCircle
+  PlayCircle,
+  Zap
 } from 'lucide-react';
 import { apiClient } from '../../api/client';
 
@@ -17,6 +18,7 @@ export default function IngestionFlow({ onSuccess, onDemoLoad }) {
   const [activeTab, setActiveTab] = useState('upload'); // 'upload' | 'youtube'
   const [selectedFile, setSelectedFile] = useState(null);
   const [youtubeUrl, setYoutubeUrl] = useState('');
+  const [allowDirectDownload, setAllowDirectDownload] = useState(false);
   const [targetDuration, setTargetDuration] = useState('auto'); // 'auto' | '30s' | '60s' | '90s'
   const [aiProvider, setAiProvider] = useState('gemini'); // 'gemini' | 'openai' | 'claude' | 'ollama'
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -110,7 +112,7 @@ export default function IngestionFlow({ onSuccess, onDemoLoad }) {
           return;
         }
 
-        const data = await apiClient.uploadToEndpoint(null, youtubeUrl.trim());
+        const data = await apiClient.uploadToEndpoint(null, youtubeUrl.trim(), allowDirectDownload);
         setJobResponse(data);
         if (onSuccess) {
           onSuccess(data);
@@ -132,6 +134,33 @@ export default function IngestionFlow({ onSuccess, onDemoLoad }) {
       } else {
         setErrorTitle('Submission Error');
         setErrorMessage(err.detail || err.message || 'Submission failed. Please check inputs.');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleBypassAndDownload = async () => {
+    setAllowDirectDownload(true);
+    setPolicyWarning(null);
+    setErrorMessage(null);
+    setIsSubmitting(true);
+    try {
+      const data = await apiClient.uploadToEndpoint(null, youtubeUrl.trim(), true);
+      setJobResponse(data);
+      if (onSuccess) {
+        onSuccess(data);
+      }
+    } catch (err) {
+      if (err.isNetworkError || err.status === 502 || err.status === 504) {
+        setErrorTitle('Backend Server Offline');
+        setErrorMessage(
+          err.message ||
+            'Backend server is not reachable on http://127.0.0.1:8000. Please start the backend with: cd Video-Clipper/backend && python -m uvicorn app.main:app --port 8000 --reload'
+        );
+      } else {
+        setErrorTitle('Download Failed');
+        setErrorMessage(err.detail || err.message || 'Direct yt-dlp download failed.');
       }
     } finally {
       setIsSubmitting(false);
@@ -261,6 +290,20 @@ export default function IngestionFlow({ onSuccess, onDemoLoad }) {
                   disabled={isSubmitting}
                 />
               </div>
+
+              {/* Dev Mode Direct Download Toggle */}
+              <div className="flex items-center gap-2 pt-1 text-xs text-slate-300">
+                <input
+                  type="checkbox"
+                  id="allowDirectDownload"
+                  checked={allowDirectDownload}
+                  onChange={e => setAllowDirectDownload(e.target.checked)}
+                  className="w-4 h-4 rounded border-slate-700 bg-slate-950 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                />
+                <label htmlFor="allowDirectDownload" className="cursor-pointer select-none text-slate-300 flex items-center gap-1">
+                  <span>Download directly with <strong className="text-indigo-400">yt-dlp</strong> (Self-Hosted / Local Testing)</span>
+                </label>
+              </div>
             </div>
 
             {/* YouTube Policy Notice */}
@@ -292,14 +335,27 @@ export default function IngestionFlow({ onSuccess, onDemoLoad }) {
 
         {/* Policy Warning Feedback */}
         {policyWarning && (
-          <div className="p-4 rounded-xl bg-amber-500/15 border border-amber-500/30 text-xs text-amber-200 space-y-1.5 animate-in fade-in duration-200">
+          <div className="p-4 rounded-xl bg-amber-500/15 border border-amber-500/30 text-xs text-amber-200 space-y-2.5 animate-in fade-in duration-200">
             <div className="flex items-center gap-2 font-bold text-amber-300">
               <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0" />
               <span>Policy Restriction Warning</span>
             </div>
             <p className="text-[11px] text-amber-300/90 leading-relaxed">{policyWarning}</p>
+            
+            <div className="pt-1 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={handleBypassAndDownload}
+                disabled={isSubmitting}
+                className="px-3.5 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer disabled:opacity-50"
+              >
+                <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                <span>⚡ Download directly with yt-dlp (Dev Mode)</span>
+              </button>
+            </div>
+
             <div className="pt-1 text-[11px] text-slate-400">
-              👉 <em>Recommendation:</em> Switch to <strong>(a) Video File Upload</strong> to
+              👉 <em>Alternative:</em> Switch to <strong>(a) Video File Upload</strong> to
               process user-owned MP4 videos directly.
             </div>
           </div>

@@ -50,7 +50,8 @@ async def upload_video_or_youtube(
     request: Request,
     background_tasks: BackgroundTasks,
     file: Optional[UploadFile] = File(None),
-    youtube_url: Optional[str] = Form(None)
+    youtube_url: Optional[str] = Form(None),
+    allow_direct_download: Optional[bool] = Form(False)
 ):
     """
     Unified Ingestion Endpoint.
@@ -144,10 +145,12 @@ async def upload_video_or_youtube(
 
         # POLICY GUARDRAIL:
         # Per YouTube Terms of Service and user policy guidelines:
-        # Do NOT attempt to programmatically download third-party YouTube videos.
-        # Check if official OAuth / API permissions exist.
+        # Do NOT attempt to programmatically download third-party YouTube videos without authorization.
+        # Check if official OAuth / API permissions exist, or user explicitly requested direct yt-dlp download in self-host mode.
         has_permission, policy_msg = check_youtube_permissions()
-        if not has_permission:
+        is_authorized = has_permission or bool(allow_direct_download)
+
+        if not is_authorized:
             logger.warning(f"YouTube ingestion rejected per policy: {policy_msg}")
             # Enqueue a policy-restricted job record for audit in DB
             rejected_job = db_create_job(
