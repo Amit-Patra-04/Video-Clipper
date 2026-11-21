@@ -25,6 +25,9 @@ class HighlightScoreBreakdown(BaseModel):
     audio_energy_score: float = Field(..., description="Acoustic volume dynamics and speech intensity (0-100)")
     visual_pacing_score: float = Field(..., description="Scene cut frequency and visual motion (0-100)")
     topic_coherence_score: float = Field(..., description="Self-contained story arc and punchline (0-100)")
+    engagement_score: Optional[float] = Field(None, description="Pacing and attention retention (0-100)")
+    value_score: Optional[float] = Field(None, description="Actionable punchline and clarity (0-100)")
+    shareability_score: Optional[float] = Field(None, description="Viral debate and emotional resonance (0-100)")
 
 class HighlightClip(BaseModel):
     id: str

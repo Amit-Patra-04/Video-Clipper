@@ -166,7 +166,7 @@ export default function HighlightLeaderboard({ clips = [], selectedClipId, onSel
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-slate-800 text-[11px] font-bold text-slate-300 flex items-center justify-center shrink-0">
+                    <span className="w-6 h-6 rounded-lg bg-indigo-600/20 border border-indigo-500/30 text-[11px] font-black text-indigo-300 flex items-center justify-center shrink-0">
                       #{index + 1}
                     </span>
                     <h4 className="text-xs font-bold text-slate-100 line-clamp-1">{clip.title || `Segment ${index + 1}`}</h4>
@@ -174,14 +174,34 @@ export default function HighlightLeaderboard({ clips = [], selectedClipId, onSel
 
                   <div className="flex items-center gap-1.5 shrink-0">
                     <span
-                      className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${
+                      className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border shadow-sm ${
                         score >= 85
-                          ? 'bg-rose-500/15 text-rose-300 border-rose-500/40'
-                          : 'bg-amber-500/15 text-amber-300 border-amber-500/40'
+                          ? 'bg-rose-500/20 text-rose-300 border-rose-500/50'
+                          : 'bg-amber-500/20 text-amber-300 border-amber-500/50'
                       }`}
                     >
                       🔥 {score} / 100
                     </span>
+                  </div>
+                </div>
+
+                {/* 4-Factor Mini Gauges (SupoClip Style) */}
+                <div className="grid grid-cols-4 gap-1.5 mt-2.5 p-2 bg-slate-900/60 rounded-lg border border-slate-800/80 text-[10px]">
+                  <div className="text-center">
+                    <span className="text-slate-400 block text-[9px]">Hook</span>
+                    <span className="font-mono font-bold text-amber-400">{Math.round(clip.breakdown?.hook_score ?? score)}%</span>
+                  </div>
+                  <div className="text-center border-l border-slate-800">
+                    <span className="text-slate-400 block text-[9px]">Engage</span>
+                    <span className="font-mono font-bold text-yellow-400">{Math.round(clip.breakdown?.engagement_score ?? clip.breakdown?.audio_energy_score ?? score)}%</span>
+                  </div>
+                  <div className="text-center border-l border-slate-800">
+                    <span className="text-slate-400 block text-[9px]">Value</span>
+                    <span className="font-mono font-bold text-cyan-400">{Math.round(clip.breakdown?.value_score ?? clip.breakdown?.topic_coherence_score ?? score)}%</span>
+                  </div>
+                  <div className="text-center border-l border-slate-800">
+                    <span className="text-slate-400 block text-[9px]">Share</span>
+                    <span className="font-mono font-bold text-purple-400">{Math.round(clip.breakdown?.shareability_score ?? clip.breakdown?.visual_pacing_score ?? score)}%</span>
                   </div>
                 </div>
 
@@ -193,7 +213,7 @@ export default function HighlightLeaderboard({ clips = [], selectedClipId, onSel
 
                 {/* Explainable Reason pill / reason explanation */}
                 {clip.reason && (
-                  <div className="mt-2 text-[11px] text-indigo-300 bg-indigo-950/30 border border-indigo-900/40 rounded-lg px-2.5 py-1 flex items-start gap-1.5">
+                  <div className="mt-2 text-[11px] text-indigo-300 bg-indigo-950/30 border border-indigo-900/40 rounded-lg px-2.5 py-1.5 flex items-start gap-1.5">
                     <CheckCircle className="w-3.5 h-3.5 text-indigo-400 shrink-0 mt-0.5" />
                     <span><strong className="text-indigo-200">Why chosen:</strong> {clip.reason}</span>
                   </div>

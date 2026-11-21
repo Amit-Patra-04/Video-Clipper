@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Header from './components/Common/Header';
 import NotificationToast from './components/Common/NotificationToast';
+import SettingsModal from './components/Common/SettingsModal';
 import IngestionFlow from './components/Ingestion/IngestionFlow';
 import PipelineStatus from './components/Pipeline/PipelineStatus';
 import VideoPlayer from './components/Editor/VideoPlayer';
@@ -18,6 +19,7 @@ export default function App() {
   // App view stage: 'ingest' | 'pipeline' | 'editor'
   const [stage, setStage] = useState('ingest');
   const [notification, setNotification] = useState(null);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // Ingestion & Job state
   const [videoId, setVideoId] = useState(null);
@@ -228,7 +230,10 @@ export default function App() {
           hook_score: 98.0,
           audio_energy_score: 94.0,
           visual_pacing_score: 92.0,
-          topic_coherence_score: 95.0
+          topic_coherence_score: 95.0,
+          engagement_score: 95.0,
+          value_score: 96.0,
+          shareability_score: 94.0
         },
         reason:
           'Loud applause opening, high speaking rate (3.4 wps), and keyword trigger (\'secret\').',
@@ -250,7 +255,10 @@ export default function App() {
           hook_score: 89.0,
           audio_energy_score: 91.0,
           visual_pacing_score: 90.0,
-          topic_coherence_score: 88.0
+          topic_coherence_score: 88.0,
+          engagement_score: 91.0,
+          value_score: 89.0,
+          shareability_score: 90.0
         },
         reason:
           'Scene cut transition and fast speech delivery (3.2 wps) on topic shift.',
@@ -271,7 +279,10 @@ export default function App() {
           hook_score: 86.0,
           audio_energy_score: 88.0,
           visual_pacing_score: 84.0,
-          topic_coherence_score: 90.0
+          topic_coherence_score: 90.0,
+          engagement_score: 88.0,
+          value_score: 91.0,
+          shareability_score: 86.0
         },
         reason:
           'High audio amplitude peak with punchline payoff (\'zero to millions\').',
@@ -292,7 +303,10 @@ export default function App() {
           hook_score: 80.0,
           audio_energy_score: 83.0,
           visual_pacing_score: 85.0,
-          topic_coherence_score: 81.0
+          topic_coherence_score: 81.0,
+          engagement_score: 82.0,
+          value_score: 81.0,
+          shareability_score: 84.0
         },
         reason:
           'Visual novelty (2 scene transitions) with steady pacing.',
@@ -313,7 +327,10 @@ export default function App() {
           hook_score: 77.0,
           audio_energy_score: 79.0,
           visual_pacing_score: 76.0,
-          topic_coherence_score: 80.0
+          topic_coherence_score: 80.0,
+          engagement_score: 78.0,
+          value_score: 82.0,
+          shareability_score: 77.0
         },
         reason:
           'Topic transition and clear vocal volume summary.',
@@ -364,7 +381,11 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
-      <Header currentStage={stage} onReset={handleReset} />
+      <Header
+        currentStage={stage}
+        onReset={handleReset}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+      />
 
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
         {/* STAGE 1: INGESTION */}
@@ -578,6 +599,9 @@ export default function App() {
 
       {/* Global Toast Notification */}
       <NotificationToast notification={notification} onClose={() => setNotification(null)} />
+
+      {/* SupoClip AI Settings & Providers Modal */}
+      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </div>
   );
 }

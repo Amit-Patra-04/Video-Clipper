@@ -17,6 +17,8 @@ export default function IngestionFlow({ onSuccess, onDemoLoad }) {
   const [activeTab, setActiveTab] = useState('upload'); // 'upload' | 'youtube'
   const [selectedFile, setSelectedFile] = useState(null);
   const [youtubeUrl, setYoutubeUrl] = useState('');
+  const [targetDuration, setTargetDuration] = useState('auto'); // 'auto' | '30s' | '60s' | '90s'
+  const [aiProvider, setAiProvider] = useState('gemini'); // 'gemini' | 'openai' | 'claude' | 'ollama'
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
   const [errorTitle, setErrorTitle] = useState('Validation Error');
@@ -334,6 +336,65 @@ export default function IngestionFlow({ onSuccess, onDemoLoad }) {
             </div>
           </div>
         )}
+
+        {/* SupoClip AI Clipping Controls */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80">
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
+              <span>Target Clip Duration</span>
+              <span className="text-[10px] text-indigo-400 font-mono">OpusClip Style</span>
+            </label>
+            <div className="grid grid-cols-4 gap-1.5">
+              {[
+                { id: 'auto', label: 'Auto' },
+                { id: '30s', label: '< 30s' },
+                { id: '60s', label: '30-60s' },
+                { id: '90s', label: '60-90s' }
+              ].map(d => (
+                <button
+                  key={d.id}
+                  type="button"
+                  onClick={() => setTargetDuration(d.id)}
+                  className={`py-1.5 px-2 rounded-lg text-[11px] font-bold transition-all ${
+                    targetDuration === d.id
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
+                  }`}
+                >
+                  {d.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
+              <span>AI Virality Model</span>
+              <span className="text-[10px] text-emerald-400 font-mono">Multi-Provider</span>
+            </label>
+            <div className="grid grid-cols-4 gap-1.5">
+              {[
+                { id: 'gemini', label: 'Gemini' },
+                { id: 'openai', label: 'GPT-4o' },
+                { id: 'claude', label: 'Claude' },
+                { id: 'ollama', label: 'Ollama' }
+              ].map(p => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setAiProvider(p.id)}
+                  className={`py-1.5 px-2 rounded-lg text-[11px] font-bold transition-all ${
+                    aiProvider === p.id
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">

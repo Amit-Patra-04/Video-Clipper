@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
-import { Scissors, GitBranch } from 'lucide-react';
+import { Scissors, GitBranch, Settings } from 'lucide-react';
 
-export default function Header({ currentStage, onReset }) {
+export default function Header({ currentStage, onReset, onOpenSettings }) {
   const headerRef = useRef(null);
   const logoIconRef = useRef(null);
   const titleRef = useRef(null);
@@ -81,7 +81,7 @@ export default function Header({ currentStage, onReset }) {
               ref={titleRef}
               className="font-extrabold text-lg tracking-tight bg-gradient-to-r from-white via-slate-200 to-indigo-300 bg-clip-text text-transparent font-display"
             >
-              AutoClip AI
+              AutoClip AI <span className="text-xs text-indigo-400 font-semibold">• SupoClip</span>
             </span>
             <span
               ref={badgeRef}
@@ -89,12 +89,15 @@ export default function Header({ currentStage, onReset }) {
             >
               Pro Studio
             </span>
+            <span className="hidden xl:inline-block text-[9px] uppercase font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              OpusClip Alt
+            </span>
           </div>
           <p className="text-xs text-slate-400">AI Video Highlights & Kinetic Shorts Engine</p>
         </div>
       </div>
 
-      <div ref={actionsRef} className="flex items-center gap-3">
+      <div ref={actionsRef} className="flex items-center gap-2 sm:gap-3">
         {/* GSAP Active Status Indicator */}
         <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-400 font-medium">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -107,6 +110,15 @@ export default function Header({ currentStage, onReset }) {
             <span className="font-semibold text-slate-200 capitalize">{currentStage}</span>
           </div>
         )}
+
+        <button
+          onClick={onOpenSettings}
+          className="text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700/60 text-slate-300 transition-colors shadow-sm flex items-center gap-1.5"
+          title="Configure API Keys & Local Models"
+        >
+          <Settings className="w-3.5 h-3.5 text-indigo-400" />
+          <span className="hidden sm:inline">Settings</span>
+        </button>
 
         <button
           onClick={onReset}

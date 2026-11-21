@@ -170,11 +170,19 @@ class HighlightRanker:
         if len(all_reasons) > 3:
             primary_reason += f" with {all_reasons[3].lower()}"
 
+        # SupoClip 4-Factor Virality Breakdown
+        engagement = round(float(np.clip(audio_score * 0.5 + rate_score * 0.5, 50.0, 99.0)), 1)
+        value = round(float(np.clip(textual_score * 0.6 + rate_score * 0.4, 50.0, 99.0)), 1)
+        shareability = round(float(np.clip(novelty_score * 0.5 + textual_score * 0.5, 50.0, 99.0)), 1)
+
         breakdown = HighlightScoreBreakdown(
             hook_score=round(textual_score, 1),
             audio_energy_score=round(audio_score, 1),
             visual_pacing_score=round(novelty_score, 1),
-            topic_coherence_score=round(rate_score, 1)
+            topic_coherence_score=round(rate_score, 1),
+            engagement_score=engagement,
+            value_score=value,
+            shareability_score=shareability
         )
 
         clip_title = self._generate_clip_title(snippet, all_reasons[0] if all_reasons else "Insight")
