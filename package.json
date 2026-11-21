@@ -4,13 +4,17 @@
   "description": "AI-Powered Video Clipper & Shorts Generator",
   "private": true,
   "scripts": {
-    "dev": "npm --prefix frontend run dev",
+    "dev": "concurrently -n \"BACKEND,FRONTEND\" -c \"blue,green\" \"python -m uvicorn app.main:app --port 8000 --reload --app-dir backend\" \"npm --prefix frontend run dev\"",
+    "dev:backend": "python -m uvicorn app.main:app --port 8000 --reload --app-dir backend",
     "dev:frontend": "npm --prefix frontend run dev",
-    "dev:backend": "cd backend && python -m uvicorn app.main:app --port 8000 --reload",
+    "start": "concurrently -n \"BACKEND,FRONTEND\" -c \"blue,green\" \"python -m uvicorn app.main:app --port 8000 --app-dir backend\" \"npm --prefix frontend run dev\"",
     "build": "npm --prefix frontend run build",
     "test": "npm --prefix frontend test",
     "test:frontend": "npm --prefix frontend test",
     "test:backend": "cd backend && python -m pytest",
     "lint": "npm --prefix frontend run lint"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
   }
 }
